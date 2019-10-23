@@ -1,0 +1,209 @@
+// Microsoft Visual C++ generated resource script.
+//
+#pragma code_page(65001)
+
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_CLIENTSITETRACKER   ICON                    "Client Site Tracker.ico"
+
+IDI_SMALL               ICON                    "small.ico"
+
+IDI_ICON1               ICON                    "icon1.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_CLIENTSITETRACKER MENU
+BEGIN
+    POPUP "&User"
+    BEGIN
+        MENUITEM "Sign In",                     ID_USER_SIGNIN
+        MENUITEM "My Sites",                    ID_USER_LISTMYSITES
+        MENUITEM "My Tickets",                  ID_USER_LISTMYOUTSTANDINGTICKET
+        MENUITEM "E&xit",                       ID_SITE_EXIT
+    END
+    POPUP "&Site"
+    BEGIN
+        MENUITEM "&New Site",                   ID_SITE_NEWSITE
+        MENUITEM "&Open Site",                  ID_SITE_OPENSITE
+        MENUITEM "&Close Site",                 ID_SITE_CLOSESITE
+    END
+    POPUP "&Tickets"
+    BEGIN
+        MENUITEM "&Create New",                 ID_TICKETS_CREATENEW
+        MENUITEM "&Open Existing",              ID_TICKETS_OPENEXISTING
+        POPUP "&List Site Outstanding"
+        BEGIN
+            MENUITEM "All",                         ID_LISTOUTSTANDING_ALL
+            MENUITEM "Controller",                  ID_LISTOUTSTANDING_CONTROLLER
+            MENUITEM "HMI",                         ID_LISTOUTSTANDING_HMI
+            MENUITEM "Drawings",                    ID_LISTOUTSTANDING_DRAWINGS
+        END
+        MENUITEM "List My Outstanding",         ID_TICKETS_LISTMYOUTSTANDING
+        POPUP "&View History"
+        BEGIN
+            MENUITEM "All",                         ID_VIEWHISTORY_ALL
+            MENUITEM "Mine",                        ID_VIEWHISTORY_MINE
+        END
+    END
+    POPUP "&Resources"
+    BEGIN
+        MENUITEM "Add Resource",                ID_RESOURCES_ADDRESOURCE
+        MENUITEM "View Resources",              ID_RESOURCES_VIEWRESOURCES
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About ...",                  IDM_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_CLIENTSITETRACKER ACCELERATORS
+BEGIN
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Client Site Tracker"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "Client Site Tracker, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (c) 2019",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_APP_TITLE           "Client Site Tracker"
+    IDC_MAIN_TOOLBAR        "Main Window Toolbar"
+    IDC_MAIN_STATUS         "Main Window Status Bar"
+    IDC_CLIENTSITETRACKER   "CLIENTSITETRACKER"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DBCONNECTED         "Connected"
+    IDS_DBDISCONNECTED      "Disconnected"
+END
+
+STRINGTABLE
+BEGIN
+    IDM_SITE                "Site"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
