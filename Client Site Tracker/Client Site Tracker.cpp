@@ -66,11 +66,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-	// Create main window status bar
-	MainSBar.parts = PSB_PARTS;
-	MainSBar.Update_List(L"Disconnected", PSB_DBSTAT);
-	MainSBar.Update_List(L"No Site Selected", PSB_SITE);
-	MainSBar.Update_List(L"No Ticket Selected", PSB_TICKETS);
+	// Initialize all settings (may change to registry settings or files later
+	// Primary Status Bar
+	Status_Var 
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -150,7 +148,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    // Generate the main Toolbar and the main Status Bar
    ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_CREATE);
-   ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, PSB_PARTS, SB_CREATE, MainSBar);
+   ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, PSB_Parts, SB_CREATE, MainSBar);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -174,8 +172,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	// Connect to the Site Management Database
 	if (Init_Login == 0)
 	{
-		SQLSTATUS = ConnectSQL(hWnd);
-		if (SQLSTATUS == 1)
+		SQLStatus = ConnectSQL(hWnd);
+		if (SQLStatus == 1)
 		{
 			Init_Login = 1;
 		}
@@ -215,7 +213,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             // TODO: Add any drawing code that uses hdc here...
 			// Reset the tool bar and status bar when main window needs repainted
 			ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_REFRESH);
-			ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, PSB_PARTS, SB_REFRESH, MainSBar);
+			ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, PSB_Parts, SB_REFRESH, MainSBar);
             EndPaint(hWnd, &ps);
         }
         break;
@@ -229,7 +227,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		UpdateStatus();
 
 		// Refresh the Main Window Status Bar
-		ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, PSB_PARTS, SB_UPDATE, MainSBar);
+		ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, PSB_Parts, SB_UPDATE, MainSBar);
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
@@ -332,7 +330,7 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int cParts, in
 			NULL);                   // no window creation data
 
 	case SB_REFRESH:
-		SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, 0, 0);
+		//SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, 0, 0);
 		// Get the coordinates of the parent window's client area.
 		GetClientRect(hWndParent, &rcClient);
 
@@ -353,9 +351,17 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int cParts, in
 	case SB_UPDATE:
 		// Update the sections with data
 		hwndStatus = GetDlgItem(hWndParent, hMenu);
-		for (i = 1 ; i <= sbVals.parts; i++)
+		if (sbVals.group_changed)
 		{
-			SendMessageW(hwndStatus, SB_SETTEXT, i-1, sbVals.Sec_Text[i]);
+			for (i = 1; i <= sbVals.parts; i++)
+			{
+				if (sbVals.changed[i])
+				{
+					SendMessage(hwndStatus, SB_SETTEXT, i - 1, (LPARAM)sbVals.Sec_Text[i]);
+					sbVals.changed[i] = 0;
+				}
+				sbVals.group_changed = 0;
+			}
 		}
 		break;
 
@@ -365,26 +371,25 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int cParts, in
 
 void UpdateStatus(void)
 {
-	const wchar_t* SQLStatus;
-	const wchar_t* UName;
+	CString SQLStatus;
+	CString DBStatus;
 		
-	if (SQLSTATUS == 1)
+	// Create main window status bar
+	MainSBar.parts = PSB_Parts;
+
+	if (SQLStatus == 1)
 	{
-		SQLStatus = L"SQL: Connected";
+		SQLStatus = L"Connected";
 	}
 	else
 	{
-		SQLStatus = L"SQL: Disconnected";
+		SQLStatus = L"Disconnected";
 	}
-	std::wstring hold(SQLStatus);
-	hold += " User: ";
-	std::wstring hold2(UName);
-	hold2 += USER_NAME;
-	hold += hold2;
-	const wchar_t* DBStatus = hold.c_str();
 
-	MainSBar.Update_List(DBStatus, PSB_DBSTAT);
-
+	MainSBar.Update_SBar(L"SQL: " + SQLStatus, PSB_SQLStat);
+	MainSBar.Update_SBar(L"User: " + User_Name, PSB_UserStat);
+	MainSBar.Update_SBar(L"Site: " + Active_Site, PSB_Site);
+	MainSBar.Update_SBar(L"Ticket: " + Active_Ticket, PSB_Tickets);
 	/*
 	// Get Menu Handle
 	HMENU MainMenu = GetMenu(hWnd);
@@ -862,5 +867,5 @@ void CloseDBLinks(void)
 		SQLFreeHandle(SQL_HANDLE_ENV, henv1);
 	}
 
-	MainSBar.Update_List(L"Disonnected", PSB_DBSTAT);
+	SQLStatus = 0;
 }
