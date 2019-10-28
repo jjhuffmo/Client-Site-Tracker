@@ -34,7 +34,7 @@ class Status_Var
 public:
 	CString Prefix;
 	CString Value;
-	int Type;
+	int Type = 0;
 	int changed = 1;
 
 	void Change(CString NewValue)
@@ -52,7 +52,7 @@ class STATUSBAR
 private:
 	int i = 0;
 	int j = 0;
-	int k;
+	int k = 0;
 
 public:
 	//int parts =1;
