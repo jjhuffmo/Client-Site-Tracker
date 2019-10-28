@@ -157,7 +157,9 @@
     <ClInclude Include="Database Defs.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="Status_Bars.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Text_Arrays.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client Site Tracker.cpp" />

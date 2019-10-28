@@ -30,6 +30,12 @@
     <ClInclude Include="Database Defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Text_Arrays.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Status_Bars.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="small.ico">
