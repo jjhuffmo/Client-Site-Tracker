@@ -16,4 +16,6 @@ Data to be recorded will be:
 
 I'm sure this will grow as I program, but this is more than enough for the time being.
 
-*****************************
+############################
+
+Site_Management.bak is the database file currently configured and can be restored to MSSQL for testing.  Path is hardcoded into the Database Defs header file and can be changed to match your configuration.
