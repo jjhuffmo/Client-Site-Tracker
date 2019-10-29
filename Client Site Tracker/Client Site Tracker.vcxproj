@@ -159,7 +159,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Status_Bars.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="Text_Arrays.h" />
+    <ClInclude Include="Security.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client Site Tracker.cpp" />

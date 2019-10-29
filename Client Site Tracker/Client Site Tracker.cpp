@@ -4,7 +4,7 @@
 #include "framework.h"
 #include "Client Site Tracker.h"
 #include "Database Defs.h"
-#include "Text_Arrays.h"
+#include "Security.h"
 #include "Status_Bars.h"
 #include <sql.h>
 #include <mbstring.h>
@@ -42,6 +42,8 @@ void InitStatusBars(void);
 void UpdateStatus(void);
 void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
 void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, STATUSBAR* sbVals);
+int CheckUser(CString New_User);
+void Validate_Security(void);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -53,13 +55,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-	// Initialize all settings (may change to registry settings or files later
-	// Get the current user
-	LPDWORD System_Buff = (LPDWORD)malloc(SYSBUFF);
-	LPWSTR Temp_Name = (LPWSTR)malloc(SYSBUFF * sizeof(LPWSTR));
-	GetUserNameW(Temp_Name, System_Buff);
-	User_Name = (LPWSTR)(LPCWSTR)Temp_Name;
-	Status_User.Change(User_Name);
 
 	// Initialize all status bars
 	InitStatusBars();
@@ -76,6 +71,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
+
+	// Initialize all settings (may change to registry settings or files later
+	// Get the current user if possible, if not then return Unknown to indicate an issue
+	LPDWORD System_Buff = (LPDWORD)malloc(SYSBUFF);
+	LPWSTR Temp_Name = (LPWSTR)malloc(SYSBUFF * sizeof(LPWSTR));
+	if (System_Buff != 0)
+	{
+		GetUserNameW(Temp_Name, System_Buff);
+		Current_User.User_Name = (LPWSTR)(LPCWSTR)Temp_Name;
+		CheckUser(Current_User.User_Name);
+	}
+	Status_User.Change(Current_User.User_Name);
+
 
     MSG msg;
 
@@ -182,10 +190,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 DestroyWindow(hWnd);
                 break;
 			case ID_USER_SIGNIN:
-				ConnectSQL(hWnd);
 				break;
 			case ID_SITE_NEWSITE:
-				Status_SQL.Change("Clicked");
 				break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
@@ -208,6 +214,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Close all database links
 		CloseDBLinks();
         break;
+	
     default:
 		// Update System Wide Status
 		UpdateStatus();
@@ -283,7 +290,8 @@ void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action)
 //  PURPOSE: Manages the primary toolbar
 //
 //  SB_CREATE - Creates the status bar
-//	SB_RESIZE - Changes the size of the status bar based on window size
+//	SB_REFRESH - Redraws the status bar based on window size
+//	SB_UPDATE - Updates the contents of the status bar
 //
 void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, STATUSBAR* sbVals)
 {
@@ -371,6 +379,14 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 	}
 }
 
+//
+//  FUNCTION: InitStatusBars(void)
+//
+//  PURPOSE: Initializes all the status bars in the system by created default entries and building the bar content objects
+//
+//  NOTES:  All status bars that will be used in the program should be initialized here and added to the 
+//			All_Status_Bars group so the content will be updated consistently
+//
 void InitStatusBars(void)
 {
 	// Add all Status Bars here for definitions
@@ -415,6 +431,56 @@ void InitStatusBars(void)
 	
 }
 
+//
+//  FUNCTION: int CheckUser(void)
+//
+//  PURPOSE: Checks the user's rights whenever the user name changes.  If the related Access_Level == 0 then hide all options in menu other than Sign In
+//
+//  NOTES:  Will need to make sure to shut down all open windows on sign out in this section when those sections get defined.
+//
+int CheckUser(CString New_User)
+{
+	SQLINTEGER sqlUserID = 0, sqlUserIDPtr;
+	SQLWCHAR *sqlUserName = (SQLWCHAR*)malloc(USER_SIZE);
+	SQLINTEGER sqlUserNamePtr;
+	SQLINTEGER sqlAccessLevel = 0, sqlAccessLevelPtr;
+	SQLRETURN results = 0;
+	CString Query = "SELECT * FROM " + (CString)USER_TABLE + " WHERE User_Name = '" + New_User + "'";
+
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLExecDirect(hstmt1, (SQLWCHAR*)(LPCWSTR)(Query), SQL_NTS));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC, 
+		SQLFetch(hstmt1));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLGetData(hstmt1, DBUSERID, SQL_C_SSHORT, &sqlUserID, 0, &sqlUserIDPtr));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLGetData(hstmt1, DBUSERNAME, SQL_WCHAR, sqlUserName, USER_SIZE, &sqlUserNamePtr));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLGetData(hstmt1, DBUSERACCESS, SQL_C_SSHORT, &sqlAccessLevel, 0, &sqlAccessLevelPtr));
+
+	Current_User.User_ID = (int)sqlUserID;
+	Current_User.User_Name = sqlUserName;
+	Current_User.User_Access = (int)sqlAccessLevel;
+
+	return (int)sqlAccessLevel;
+Exit:
+	Current_User.User_Access = 0;
+	Current_User.User_Name = "Not Logged In";
+	return 0;
+}
+
+//
+//  FUNCTION: UpdateStatus(void)
+//
+//  PURPOSE: Updates all the status bar(s) content in the project
+//
+//  NOTES:  This section should not be used to do control of variables, but just reporting the status
+//
 void UpdateStatus(void)
 {
 	//Update All System Wide Status Objects (Status Bars/Tool Bars/etc)
@@ -424,15 +490,20 @@ void UpdateStatus(void)
 	if (SQLConnStatus)
 	{
 		Status_SQL.Change("Connected");
-		//SQLGetInfo(hdbc1, SQL_USER_NAME, userName, Buffer, &sqlsize);
-		//User_Name = (LPCTSTR) userName;
 	}
 	else
 	{
 		Status_SQL.Change("Disconnected");
 	}
-	Access.Format(L"%d", User_Access);
+	Access.Format(L"%d", Current_User.User_Access);
 	Status_Access.Change(Access);
+	Status_User.Change(Current_User.User_Name);
+
+	// Validate security access
+	if (Status_Access.changed)
+	{
+		Validate_Security();
+	}
 
 	for (i = 0; i < (int)All_Status_Bars.Status_Bars.size(); i++)
 	{
@@ -440,9 +511,16 @@ void UpdateStatus(void)
 	}
 }
 
+//
+//  FUNCTION: INT ConnectSQL(HWND hWnd)
+//
+//  PURPOSE: Attempts to log into the database using Windows credentials.  Used when the program is first run.
+//
+//  NOTES:  If this function fails to connect, a flag is set and the user will have to manually sign into the database in ManConnectSQL()
+//
 INT ConnectSQL(HWND hWnd)
 {
-	// Try to log in using Windows authentication
+	// Try to connect using Windows authentication
 	if (SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv1) == SQL_ERROR)
 	{
 		//Unable to allocate an environment handle
@@ -466,7 +544,6 @@ INT ConnectSQL(HWND hWnd)
 
 	// Connect to the driver.  Use the connection string if supplied
 	// on the input, otherwise let the driver manager prompt for input.
-
 	TRYODBC(hdbc1,
 		SQL_HANDLE_DBC,
 		SQLDriverConnect(hdbc1,
@@ -489,10 +566,16 @@ INT ConnectSQL(HWND hWnd)
 
 Exit:
 	// Return failure if all calls weren't successfully completed
-	//MessageBoxW(hWnd, L"Failed To Log Into SQL Database", L"Database Error", MB_OK | MB_ICONERROR | MB_APPLMODAL);
 	return 0;
 }
 
+//
+//  FUNCTION: CloseDBLinks(void)
+//
+//  PURPOSE: Closes (frees) all database handles
+//
+//  NOTES:  Called before exiting to release resources and do a clean exit
+//
 void CloseDBLinks(void)
 {
 	// Free ODBC handles and exit
@@ -556,4 +639,17 @@ void HandleDiagnosticRecord(SQLHANDLE      hHandle,
 			fwprintf(stderr, L"[%5.5s] %s (%d)\n", wszState, wszMessage, iError);
 		}
 	}
+}
+
+//
+//  FUNCTION: Validate_Security(void)
+//
+//  PURPOSE: Anytime the security access value changes, go through and modify system wide settings to lock out or disable controls
+//
+//  NOTES:  By default, everything will be disabled
+//
+void Validate_Security(void)
+{
+	// Enable/disable menu/toolbar items by security level
+
 }

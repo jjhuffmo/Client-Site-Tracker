@@ -5,15 +5,13 @@
 #include <atlstr.h>
 #include "resource.h"
 #include "Database Defs.h"
-#include "Text_Arrays.h"
+
 
 // Buffers and variable identifiers
 #define SYSBUFF 256
 
 // Status Variables (For Status Bars, Toolboxes, Pop-ups, etc)
 INT SQLConnStatus = 0;									// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
-INT User_Access = 0;									// Currently Logged On User Access Level - For Security/Access Rights
-CString User_Name;										// Currently Logged In User Name
 
 // Toolbar Commands
 #define TB_CREATE		1
