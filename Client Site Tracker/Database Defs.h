@@ -20,7 +20,6 @@ SQLHDBC hdbc1 = NULL;
 SQLHSTMT hstmt1 = NULL;
 WCHAR       wszInput[SQL_QUERY_SIZE];
 SHORT   gHeight = 80;       // Users screen height
-BOOL	Logged_In = 0;
 
 /******************************************/
 /* Structure to store information about   */
@@ -38,7 +37,7 @@ typedef struct STR_BINDING {
 // Define database structures for constant tables here
 class DBUSER {
 	int USERID;
-	std::string USERNAME;
+	CString USERNAME;
 	int USERACCESS;
 };
 

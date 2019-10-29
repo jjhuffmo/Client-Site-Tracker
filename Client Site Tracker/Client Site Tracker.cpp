@@ -54,6 +54,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: Place code here.
 	// Initialize all settings (may change to registry settings or files later
+	// Get the current user
+	LPDWORD System_Buff = (LPDWORD)malloc(SYSBUFF);
+	LPWSTR Temp_Name = (LPWSTR)malloc(SYSBUFF * sizeof(LPWSTR));
+	GetUserNameW(Temp_Name, System_Buff);
+	User_Name = (LPWSTR)(LPCWSTR)Temp_Name;
+	Status_User.Change(User_Name);
+
+	// Initialize all status bars
 	InitStatusBars();
 
     // Initialize global strings
@@ -378,7 +386,11 @@ void InitStatusBars(void)
 	// User Information
 	Status_User.Prefix = "User: ";
 	Status_User.Type = PSB_UserStat;
-	Status_User.Change("No User");
+	//Status_User.Change("No User");
+
+	// User Access Level
+	Status_Access.Prefix = "Access Level: ";
+	Status_Access.Type = PSB_Access;
 
 	// Site Information
 	Status_Site.Prefix = "Site: ";
@@ -393,6 +405,7 @@ void InitStatusBars(void)
 	// Load each section into the Status Bar
 	MainSBar.Sections.push_back(&Status_SQL);
 	MainSBar.Sections.push_back(&Status_User);
+	MainSBar.Sections.push_back(&Status_Access);
 	MainSBar.Sections.push_back(&Status_Site);
 	MainSBar.Sections.push_back(&Status_Tickets);
 	MainSBar.group_changed = 1;
@@ -406,14 +419,20 @@ void UpdateStatus(void)
 {
 	//Update All System Wide Status Objects (Status Bars/Tool Bars/etc)
 	int i = 0;
+	CString Access = L"0";
+
 	if (SQLConnStatus)
 	{
 		Status_SQL.Change("Connected");
+		//SQLGetInfo(hdbc1, SQL_USER_NAME, userName, Buffer, &sqlsize);
+		//User_Name = (LPCTSTR) userName;
 	}
 	else
 	{
 		Status_SQL.Change("Disconnected");
 	}
+	Access.Format(L"%d", User_Access);
+	Status_Access.Change(Access);
 
 	for (i = 0; i < (int)All_Status_Bars.Status_Bars.size(); i++)
 	{

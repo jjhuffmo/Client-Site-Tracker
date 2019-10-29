@@ -7,9 +7,13 @@
 #include "Database Defs.h"
 #include "Text_Arrays.h"
 
+// Buffers and variable identifiers
+#define SYSBUFF 256
+
 // Status Variables (For Status Bars, Toolboxes, Pop-ups, etc)
 INT SQLConnStatus = 0;									// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
-INT User_Access;										// Currently Logged On User Access Level - For Security/Access Rights
+INT User_Access = 0;									// Currently Logged On User Access Level - For Security/Access Rights
+CString User_Name;										// Currently Logged In User Name
 
 // Toolbar Commands
 #define TB_CREATE		1
@@ -25,8 +29,9 @@ INT User_Access;										// Currently Logged On User Access Level - For Securit
 // Primary Status Bar Locations - Defaults
 int PSB_SQLStat = 1;			// Database Status (Slot 1)
 int PSB_UserStat = 2;			// Active User (Slot 2)
-int PSB_Site = 3;				// Site Information (Slot 3)
-int PSB_Tickets = 4;			// Tickets Information (Slot 4)
+int PSB_Site = 4;				// Site Information (Slot 3)
+int PSB_Tickets = 5;			// Tickets Information (Slot 4)
+int PSB_Access = 3;				// Current User Access Level (Slot 5)
 
 // All Status Variables for use in status bars, toolbars, tracking, etc.
 class Status_Var
