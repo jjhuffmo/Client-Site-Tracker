@@ -10,6 +10,8 @@
 #define SITE_EDITOR		5000	// Minimum to create sites
 #define	SYSTEM_ADMIN	9000	// Minimum to change about everything
 
+// Define resource types for identifying control and security
+#define RES_MENU	1
 class
 {
 public:
@@ -17,10 +19,4 @@ public:
 	int Resource_ID;
 	int Min_Security;
 
-	void Update_Resource()
-	{
-		switch (Resource_Type)
-		{
-		}
-	}
 } Resource_Security;
