@@ -39,12 +39,12 @@ void HandleDiagnosticRecord(SQLHANDLE      hHandle,
 	RETCODE        RetCode);
 
 void InitStatusBars(void);
-void UpdateStatus(void);
+void UpdateStatus(HWND hWnd);
 void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
 void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, STATUSBAR* sbVals);
 int CheckUser(CString New_User);
-void Validate_Security(void);
-
+void Validate_Security(HWND hWnd);
+void SetSecurity(void);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -59,6 +59,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// Initialize all status bars
 	InitStatusBars();
 
+
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_CLIENTSITETRACKER, szWindowClass, MAX_LOADSTRING);
@@ -69,6 +70,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
         return FALSE;
     }
+
+	SetSecurity();
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
 
@@ -192,6 +195,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CheckUser(Current_User.User_Name);
 				break;
 			case ID_SITE_NEWSITE:
+				Validate_Security(hWnd);
+				DrawMenuBar(hWnd);
 				break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
@@ -217,7 +222,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	
     default:
 		// Update System Wide Status
-		UpdateStatus();
+		UpdateStatus(hWnd);
 
 		// Refresh the Main Window Status Bar
 		ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_UPDATE, &MainSBar);
@@ -375,6 +380,7 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 
 			//}
 		}
+
 		break;
 	}
 }
@@ -382,15 +388,13 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 //
 //  FUNCTION: InitStatusBars(void)
 //
-//  PURPOSE: Initializes all the status bars in the system by created default entries and building the bar content objects
+//  PURPOSE: Initializes all the status bars in the system by creating default entries and building the bar content objects
 //
 //  NOTES:  All status bars that will be used in the program should be initialized here and added to the 
 //			All_Status_Bars group so the content will be updated consistently
 //
 void InitStatusBars(void)
 {
-	// Add all Status Bars here for definitions
-
 	// Main Status Bar (Primary Window)
 
 	// Define each section before pushing definitions onto stack
@@ -430,6 +434,7 @@ void InitStatusBars(void)
 	All_Status_Bars.Status_Bars.push_back(&MainSBar);
 	
 }
+
 
 //
 //  FUNCTION: int CheckUser(void)
@@ -481,7 +486,7 @@ Exit:
 //
 //  NOTES:  This section should not be used to do control of variables, but just reporting the status
 //
-void UpdateStatus(void)
+void UpdateStatus(HWND hWnd)
 {
 	//Update All System Wide Status Objects (Status Bars/Tool Bars/etc)
 	int i = 0;
@@ -498,11 +503,23 @@ void UpdateStatus(void)
 	Access.Format(L"%d", Current_User.User_Access);
 	Status_Access.Change(Access);
 	Status_User.Change(Current_User.User_Name);
+	if (Status_User.changed)
+	{
+		if (Current_User.User_Name != "Not Logged In")
+		{
+			MMB_Login.Update(hInst, L"Sign Out");
+		}
+		else
+		{
+			MMB_Login.Update(hInst, L"Sign In");
+		}
+		DrawMenuBar(hWnd);
+	}
 
 	// Validate security access
 	if (Status_Access.changed)
 	{
-		Validate_Security();
+		//Validate_Security(hWnd);
 	}
 
 	for (i = 0; i < (int)All_Status_Bars.Status_Bars.size(); i++)
@@ -640,14 +657,52 @@ void HandleDiagnosticRecord(SQLHANDLE      hHandle,
 }
 
 //
+//  FUNCTION: SetSecurity(void)
+//
+//  PURPOSE: Sets the security levels for resources, also initializes the resource class for changing text if necessary
+
+//
+void SetSecurity(void)
+{
+	// Main Status Bar (Primary Window)
+	MMB_Login.Resource_Type = RES_MENU;
+	MMB_Login.Resource_ID = ID_USER_SIGNIN;
+	MMB_Login.Min_Security = 0;
+	//MMB_Login.hInst = &hInst;
+	MMB_Login.mName = IDC_CLIENTSITETRACKER;
+
+	// Push all definitions on to the stack
+	All_Security.push_back(&MMB_Login);
+}
+
+//
 //  FUNCTION: Validate_Security(void)
 //
 //  PURPOSE: Anytime the security access value changes, go through and modify system wide settings to lock out or disable controls
 //
 //  NOTES:  By default, everything will be disabled
 //
-void Validate_Security(void)
+void Validate_Security(HWND hWnd)
 {
 	// Enable/disable menu/toolbar items by security level
+	/*int i = 0;
+	for (i = 0; i < (int) All_Security.size() ; i++)
+	{
+		All_Security[i]->Update(hInst);
+	}*/
+	int result;
 
+	HMENU hMenu;
+	hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
+
+	//result = ModifyMenu(hMenu, 1, MF_BYPOSITION, MF_DISABLED, NULL );
+	MENUITEMINFOW ItemDetail = { sizeof(MENUITEMINFO) };
+	ItemDetail.cbSize = sizeof(MENUITEMINFO);
+	//ItemDetail.fMask = MIIM_FTYPE | MIIM_DATA | MIIM_STATE;
+	ItemDetail.fMask = MIIM_STATE | MIIM_ID | MIIM_STRING | MIIM_FTYPE | MIIM_DATA;
+	ItemDetail.fType = MIIM_STRING;
+	result = GetMenuItemInfo(hMenu, ID_USER_SIGNIN, 0, &ItemDetail);
+	ItemDetail.dwTypeData = (LPWSTR)L"Sign Out";
+	ItemDetail.fState = MFS_DISABLED;
+	result = SetMenuItemInfoW(hMenu, ID_USER_SIGNIN, 0, &ItemDetail);
 }
