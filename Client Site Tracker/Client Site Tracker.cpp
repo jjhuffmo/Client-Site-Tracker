@@ -84,8 +84,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	Status_User.Change(Current_User.User_Name);
 
-
-    MSG msg;
+	MSG msg;
 
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
@@ -152,7 +151,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    // Connect to the Site Management Database
    // If we log in correctly, then move forward
    SQLConnStatus = (ConnectSQL(hWnd));
-  
+
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -190,6 +189,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 DestroyWindow(hWnd);
                 break;
 			case ID_USER_SIGNIN:
+				CheckUser(Current_User.User_Name);
 				break;
 			case ID_SITE_NEWSITE:
 				break;
@@ -547,16 +547,14 @@ INT ConnectSQL(HWND hWnd)
 	TRYODBC(hdbc1,
 		SQL_HANDLE_DBC,
 		SQLDriverConnect(hdbc1,
-			//GetDesktopWindow(),
-			NULL,
+			GetDesktopWindow(),
+			//NULL,
 			ConnStrIn,
 			SQL_NTS,
 			NULL,
 			0,
 			NULL,
-			SQL_DRIVER_NOPROMPT));
-
-	
+			SQL_DRIVER_COMPLETE));
 
 	TRYODBC(hdbc1,
 		SQL_HANDLE_DBC,

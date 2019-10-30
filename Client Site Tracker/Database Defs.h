@@ -8,6 +8,7 @@
 // Define database connection information
 SQLWCHAR *ConnStrIn = (SQLWCHAR*)(L"DRIVER={SQL Server};SERVER=(local);DATABASE=Site_Management;Trusted_Connection=yes;");
 
+
 #define DISPLAY_MAX 50          // Arbitrary limit on column width to display
 #define DISPLAY_FORMAT_EXTRA 3  // Per column extra display bytes (| <data> )
 #define DISPLAY_FORMAT      L"%c %*.*s "
