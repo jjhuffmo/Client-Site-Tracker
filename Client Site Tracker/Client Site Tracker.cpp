@@ -177,6 +177,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	/*int result;
+	HMENU hMenu;
+	hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
+	LPCWSTR DTData;
+	UINT_PTR NewData = NULL;
+
+	//result = ModifyMenu(hMenu, 1, MF_BYPOSITION, MF_DISABLED, NULL );
+	MENUITEMINFOW ItemDetail = { sizeof(MENUITEMINFO) };
+	ItemDetail.cbSize = sizeof(MENUITEMINFO);
+	*/
 	switch (message)
     {
     case WM_COMMAND:
@@ -188,16 +198,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
-            case ID_SITE_EXIT:
+            case IDM_SITE_EXIT:
                 DestroyWindow(hWnd);
                 break;
-			case ID_USER_SIGNIN:
+			case IDM_USER_SIGNIN:
 				CheckUser(Current_User.User_Name);
 				break;
-			case ID_SITE_NEWSITE:
+			case IDM_SITE_NEWSITE:
 				Validate_Security(hWnd);
 				DrawMenuBar(hWnd);
 				break;
+			case IDM_SITE_OPENSITE:
+				DrawMenuBar(hWnd);
+				//DestroyMenu(hMenu);
+				break;
+
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -231,6 +246,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
+
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -507,19 +523,18 @@ void UpdateStatus(HWND hWnd)
 	{
 		if (Current_User.User_Name != "Not Logged In")
 		{
-			MMB_Login.Update(hInst, L"Sign Out");
+			MMB_Login.Update(hWnd, L"Sign Out");
 		}
 		else
 		{
-			MMB_Login.Update(hInst, L"Sign In");
+			MMB_Login.Update(hWnd, L"Sign In");
 		}
-		DrawMenuBar(hWnd);
 	}
 
 	// Validate security access
 	if (Status_Access.changed)
 	{
-		//Validate_Security(hWnd);
+		Validate_Security(hWnd);
 	}
 
 	for (i = 0; i < (int)All_Status_Bars.Status_Bars.size(); i++)
@@ -666,14 +681,20 @@ void SetSecurity(void)
 {
 	// Main Status Bar (Primary Window)
 	MMB_Login.Resource_Type = RES_MENU;
-	MMB_Login.Resource_ID = ID_USER_SIGNIN;
+	MMB_Login.Resource_ID = IDM_USER_SIGNIN;
 	MMB_Login.Min_Security = 0;
-	//MMB_Login.hInst = &hInst;
-	MMB_Login.mName = IDC_CLIENTSITETRACKER;
+
+	// Main Status Bar (Primary Window)
+	MMB_MySites.Resource_Type = RES_MENU;
+	MMB_MySites.Resource_ID = IDM_USER_LISTMYSITES;
+	MMB_MySites.Min_Security = 6000;
+
 
 	// Push all definitions on to the stack
 	All_Security.push_back(&MMB_Login);
+	All_Security.push_back(&MMB_MySites);
 }
+
 
 //
 //  FUNCTION: Validate_Security(void)
@@ -684,25 +705,32 @@ void SetSecurity(void)
 //
 void Validate_Security(HWND hWnd)
 {
-	// Enable/disable menu/toolbar items by security level
-	/*int i = 0;
-	for (i = 0; i < (int) All_Security.size() ; i++)
+	HMENU NewMenu;
+	int result = 0;
+	int i = 0;
+	MENUITEMINFO MenuItem = { sizeof(LPMENUITEMINFO) };
+	CString entry;
+
+	int Records = All_Security.size();
+
+	for (i = 0; i < Records; i++)
 	{
-		All_Security[i]->Update(hInst);
-	}*/
-	int result;
+		All_Security[i]->Update(hWnd);
+	}
 
-	HMENU hMenu;
-	hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
+	MenuItem.fMask = MIIM_STRING | MIIM_ID;
+	MenuItem.fType = MIIM_STRING;
+	MenuItem.cbSize = sizeof(MENUITEMINFOW);
 
-	//result = ModifyMenu(hMenu, 1, MF_BYPOSITION, MF_DISABLED, NULL );
-	MENUITEMINFOW ItemDetail = { sizeof(MENUITEMINFO) };
-	ItemDetail.cbSize = sizeof(MENUITEMINFO);
-	//ItemDetail.fMask = MIIM_FTYPE | MIIM_DATA | MIIM_STATE;
-	ItemDetail.fMask = MIIM_STATE | MIIM_ID | MIIM_STRING | MIIM_FTYPE | MIIM_DATA;
-	ItemDetail.fType = MIIM_STRING;
-	result = GetMenuItemInfo(hMenu, ID_USER_SIGNIN, 0, &ItemDetail);
-	ItemDetail.dwTypeData = (LPWSTR)L"Sign Out";
-	ItemDetail.fState = MFS_DISABLED;
-	result = SetMenuItemInfoW(hMenu, ID_USER_SIGNIN, 0, &ItemDetail);
+	// Check to see if there's a Site2 Menu, if not then add it. 
+	for (i = 0; i <= GetMenuItemCount(GetMenu(hWnd)); i++)
+	{
+		MenuItem.dwTypeData = NULL;
+		result = GetMenuItemInfoW(GetMenu(hWnd), i, true, &MenuItem);
+
+		entry = (LPWSTR)MenuItem.fType;
+	}
+	NewMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_SITE));
+	result = AppendMenuW(GetMenu(hWnd), MF_POPUP, (UINT_PTR)NewMenu, L"Site2" );
+	DestroyMenu(NewMenu);
 }

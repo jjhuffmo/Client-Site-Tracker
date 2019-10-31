@@ -48,39 +48,39 @@ IDC_CLIENTSITETRACKER MENU
 BEGIN
     POPUP "&User"
     BEGIN
-        MENUITEM "Sign In",                     ID_USER_SIGNIN
-        MENUITEM "My Sites",                    ID_USER_LISTMYSITES
-        MENUITEM "My Tickets",                  ID_USER_LISTMYOUTSTANDINGTICKET
-        MENUITEM "E&xit",                       ID_SITE_EXIT
+        MENUITEM "Sign In",                     IDM_USER_SIGNIN
+        MENUITEM "My Sites",                    IDM_USER_LISTMYSITES
+        MENUITEM "My Tickets",                  IDM_USER_LISTMYOUTSTANDINGTICKET
+        MENUITEM "E&xit",                       IDM_SITE_EXIT
     END
     POPUP "&Site"
     BEGIN
-        MENUITEM "&New Site",                   ID_SITE_NEWSITE
-        MENUITEM "&Open Site",                  ID_SITE_OPENSITE
-        MENUITEM "&Close Site",                 ID_SITE_CLOSESITE
+        MENUITEM "&New Site",                   IDM_SITE_NEWSITE
+        MENUITEM "&Open Site",                  IDM_SITE_OPENSITE
+        MENUITEM "&Close Site",                 IDM_SITE_CLOSESITE
     END
     POPUP "&Tickets"
     BEGIN
-        MENUITEM "&Create New",                 ID_TICKETS_CREATENEW
-        MENUITEM "&Open Existing",              ID_TICKETS_OPENEXISTING
+        MENUITEM "&Create New",                 IDM_TICKETS_CREATENEW
+        MENUITEM "&Open Existing",              IDM_TICKETS_OPENEXISTING
         POPUP "&List Site Outstanding"
         BEGIN
-            MENUITEM "All",                         ID_LISTOUTSTANDING_ALL
-            MENUITEM "Controller",                  ID_LISTOUTSTANDING_CONTROLLER
-            MENUITEM "HMI",                         ID_LISTOUTSTANDING_HMI
-            MENUITEM "Drawings",                    ID_LISTOUTSTANDING_DRAWINGS
+            MENUITEM "All",                         IDM_LISTOUTSTANDING_ALL
+            MENUITEM "Controller",                  IDM_LISTOUTSTANDING_CONTROLLER
+            MENUITEM "HMI",                         IDM_LISTOUTSTANDING_HMI
+            MENUITEM "Drawings",                    IDM_LISTOUTSTANDING_DRAWINGS
         END
-        MENUITEM "List My Outstanding",         ID_TICKETS_LISTMYOUTSTANDING
+        MENUITEM "List My Outstanding",         IDM_TICKETS_LISTMYOUTSTANDING
         POPUP "&View History"
         BEGIN
-            MENUITEM "All",                         ID_VIEWHISTORY_ALL
-            MENUITEM "Mine",                        ID_VIEWHISTORY_MINE
+            MENUITEM "All",                         IDM_VIEWHISTORY_ALL
+            MENUITEM "Mine",                        IDM_VIEWHISTORY_MINE
         END
     END
     POPUP "&Resources"
     BEGIN
-        MENUITEM "Add Resource",                ID_RESOURCES_ADDRESOURCE
-        MENUITEM "View Resources",              ID_RESOURCES_VIEWRESOURCES
+        MENUITEM "Add Resource",                IDM_RESOURCES_ADDRESOURCE
+        MENUITEM "View Resources",              IDM_RESOURCES_VIEWRESOURCES
     END
     POPUP "&Help"
     BEGIN
@@ -88,6 +88,12 @@ BEGIN
     END
 END
 
+IDC_SITE MENU
+BEGIN
+		MENUITEM "&New Site", IDM_SITE_NEWSITE
+		MENUITEM "&Open Site", IDM_SITE_OPENSITE
+		MENUITEM "&Close Site", IDM_SITE_CLOSESITE
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -179,6 +185,7 @@ BEGIN
     IDC_MAIN_TOOLBAR        "Main Window Toolbar"
     IDC_MAIN_STATUS         "Main Window Status Bar"
     IDC_CLIENTSITETRACKER   "CLIENTSITETRACKER"
+	IDC_SITE				"Client Site Tracker Site Menu"
 END
 
 STRINGTABLE
