@@ -18,6 +18,7 @@
 #include <CommCtrl.h>
 #include <vector>
 #include <algorithm>
+#include <lmcons.h>
 
 
 #define MAX_LOADSTRING 100
@@ -45,6 +46,7 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 int CheckUser(CString New_User);
 void Validate_Security(HWND hWnd);
 void SetSecurity(void);
+void EnableMenus(HWND hWnd, CString MenuName, INT State);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -77,11 +79,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// Initialize all settings (may change to registry settings or files later
 	// Get the current user if possible, if not then return Unknown to indicate an issue
-	LPDWORD System_Buff = (LPDWORD)malloc(SYSBUFF);
-	LPWSTR Temp_Name = (LPWSTR)malloc(SYSBUFF * sizeof(LPWSTR));
+
+	TCHAR Temp_Name[UNLEN + 1];
+	DWORD System_Buff = UNLEN + 1;
 	if (System_Buff != 0)
 	{
-		GetUserNameW(Temp_Name, System_Buff);
+		GetUserNameW(Temp_Name, &System_Buff);
 		Current_User.User_Name = (LPWSTR)(LPCWSTR)Temp_Name;
 		CheckUser(Current_User.User_Name);
 	}
@@ -177,16 +180,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	/*int result;
-	HMENU hMenu;
-	hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
-	LPCWSTR DTData;
-	UINT_PTR NewData = NULL;
-
-	//result = ModifyMenu(hMenu, 1, MF_BYPOSITION, MF_DISABLED, NULL );
-	MENUITEMINFOW ItemDetail = { sizeof(MENUITEMINFO) };
-	ItemDetail.cbSize = sizeof(MENUITEMINFO);
-	*/
 	switch (message)
     {
     case WM_COMMAND:
@@ -212,7 +205,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				DrawMenuBar(hWnd);
 				//DestroyMenu(hMenu);
 				break;
-
+			case IDM_USER_LISTMYTICKETS:
+				if (Current_User.User_Access > 1000)
+				{
+					Current_User.User_Access = 0;
+				}
+				else
+				{
+					Current_User.User_Access = 5000;
+				}
+				//EnableMenus(hWnd, L"&Management", 0);
+				break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -378,8 +381,8 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 				//if (sbVals->changed[i])
 				//{
 
-					LPARAM holding = (LPARAM)(LPCWSTR)sbVals->Sec_Text[i+1];
-					SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)i, holding);
+					//LPARAM holding = (LPARAM)(LPCWSTR)sbVals->Sec_Text[i+1];
+					SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)i, (LPARAM)(LPCWSTR)sbVals->Sec_Text[i + 1]);
 					
 						sbVals->changed[i] = 0;
 				//		j++;
@@ -422,7 +425,6 @@ void InitStatusBars(void)
 	// User Information
 	Status_User.Prefix = "User: ";
 	Status_User.Type = PSB_UserStat;
-	//Status_User.Change("No User");
 
 	// User Access Level
 	Status_Access.Prefix = "Access Level: ";
@@ -523,11 +525,11 @@ void UpdateStatus(HWND hWnd)
 	{
 		if (Current_User.User_Name != "Not Logged In")
 		{
-			MMB_Login.Update(hWnd, L"Sign Out");
+			MMB_Login.Update(hInst, hWnd, L"Sign Out");
 		}
 		else
 		{
-			MMB_Login.Update(hWnd, L"Sign In");
+			MMB_Login.Update(hInst, hWnd, L"Sign In");
 		}
 	}
 
@@ -679,20 +681,26 @@ void HandleDiagnosticRecord(SQLHANDLE      hHandle,
 //
 void SetSecurity(void)
 {
-	// Main Status Bar (Primary Window)
-	MMB_Login.Resource_Type = RES_MENU;
+	// Main Status Bar User Sign In/Out
+	MMB_Login.Resource_Type = RES_MENUITEM;
 	MMB_Login.Resource_ID = IDM_USER_SIGNIN;
 	MMB_Login.Min_Security = 0;
 
-	// Main Status Bar (Primary Window)
-	MMB_MySites.Resource_Type = RES_MENU;
+	// Main Status Bar User My Sites
+	MMB_MySites.Resource_Type = RES_MENUITEM;
 	MMB_MySites.Resource_ID = IDM_USER_LISTMYSITES;
-	MMB_MySites.Min_Security = 6000;
+	MMB_MySites.Min_Security = 1;
 
-
+	// Main Status Bar System Manager
+	MMB_Sys_Management.Resource_Type = RES_MENU;
+	MMB_Sys_Management.Resource_ID = IDC_SYS_MANAGEMENT;
+	MMB_Sys_Management.Min_Security = 5000;
+	MMB_Sys_Management.Label = L"&Management";
+	
 	// Push all definitions on to the stack
 	All_Security.push_back(&MMB_Login);
 	All_Security.push_back(&MMB_MySites);
+	All_Security.push_back(&MMB_Sys_Management);
 }
 
 
@@ -705,19 +713,26 @@ void SetSecurity(void)
 //
 void Validate_Security(HWND hWnd)
 {
+	int i = 0;
+
+	int Records = All_Security.size();
+
+	
+	for (i = 0; i < Records; i++)
+	{
+		All_Security[i]->Update(hInst, hWnd);
+	}
+}
+
+void EnableMenus(HWND hWnd, CString MenuName, INT State)
+{
 	HMENU NewMenu;
 	int result = 0;
 	int i = 0;
 	MENUITEMINFO MenuItem = { sizeof(LPMENUITEMINFO) };
-	CString entry;
-
-	int Records = All_Security.size();
-
-	for (i = 0; i < Records; i++)
-	{
-		All_Security[i]->Update(hWnd);
-	}
-
+	//LPWSTR entry;
+	int found = 0;
+	
 	MenuItem.fMask = MIIM_STRING | MIIM_ID;
 	MenuItem.fType = MIIM_STRING;
 	MenuItem.cbSize = sizeof(MENUITEMINFOW);
@@ -727,10 +742,21 @@ void Validate_Security(HWND hWnd)
 	{
 		MenuItem.dwTypeData = NULL;
 		result = GetMenuItemInfoW(GetMenu(hWnd), i, true, &MenuItem);
-
-		entry = (LPWSTR)MenuItem.fType;
+		//entry = new (LPWSTR);
+		LPWSTR entry = (LPWSTR) malloc(MenuItem.cch ++);
+		MenuItem.dwTypeData = entry;
+		MenuItem.cch++;
+		result = GetMenuItemInfoW(GetMenu(hWnd), i, true, &MenuItem);
+		if (MenuItem.dwTypeData == L"&Site2")
+		{
+			found = 1;
+		}
+		free(entry);
 	}
-	NewMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_SITE));
-	result = AppendMenuW(GetMenu(hWnd), MF_POPUP, (UINT_PTR)NewMenu, L"Site2" );
-	DestroyMenu(NewMenu);
+	if (found == 0)
+	{
+		NewMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_SITE));
+		result = AppendMenuW(GetMenu(hWnd), MF_POPUP, (UINT_PTR)NewMenu, L"Site2");
+		DestroyMenu(NewMenu);
+	}
 }

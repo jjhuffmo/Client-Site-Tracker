@@ -44,43 +44,13 @@ IDI_ICON1               ICON                    "icon1.ico"
 // Menu
 //
 
-IDC_CLIENTSITETRACKER MENU
+IDC_CLIENTSITETRACKER MENU	// Everyones Main Menu
 BEGIN
     POPUP "&User"
     BEGIN
         MENUITEM "Sign In",                     IDM_USER_SIGNIN
-        MENUITEM "My Sites",                    IDM_USER_LISTMYSITES
-        MENUITEM "My Tickets",                  IDM_USER_LISTMYOUTSTANDINGTICKET
-        MENUITEM "E&xit",                       IDM_SITE_EXIT
-    END
-    POPUP "&Site"
-    BEGIN
-        MENUITEM "&New Site",                   IDM_SITE_NEWSITE
-        MENUITEM "&Open Site",                  IDM_SITE_OPENSITE
-        MENUITEM "&Close Site",                 IDM_SITE_CLOSESITE
-    END
-    POPUP "&Tickets"
-    BEGIN
-        MENUITEM "&Create New",                 IDM_TICKETS_CREATENEW
-        MENUITEM "&Open Existing",              IDM_TICKETS_OPENEXISTING
-        POPUP "&List Site Outstanding"
-        BEGIN
-            MENUITEM "All",                         IDM_LISTOUTSTANDING_ALL
-            MENUITEM "Controller",                  IDM_LISTOUTSTANDING_CONTROLLER
-            MENUITEM "HMI",                         IDM_LISTOUTSTANDING_HMI
-            MENUITEM "Drawings",                    IDM_LISTOUTSTANDING_DRAWINGS
-        END
-        MENUITEM "List My Outstanding",         IDM_TICKETS_LISTMYOUTSTANDING
-        POPUP "&View History"
-        BEGIN
-            MENUITEM "All",                         IDM_VIEWHISTORY_ALL
-            MENUITEM "Mine",                        IDM_VIEWHISTORY_MINE
-        END
-    END
-    POPUP "&Resources"
-    BEGIN
-        MENUITEM "Add Resource",                IDM_RESOURCES_ADDRESOURCE
-        MENUITEM "View Resources",              IDM_RESOURCES_VIEWRESOURCES
+		MENUITEM "My Tickets", IDM_USER_LISTMYTICKETS
+		MENUITEM "E&xit",                       IDM_SITE_EXIT
     END
     POPUP "&Help"
     BEGIN
@@ -88,11 +58,52 @@ BEGIN
     END
 END
 
-IDC_SITE MENU
+IDC_SYS_MANAGEMENT MENU	// System Manager Menu
 BEGIN
-		MENUITEM "&New Site", IDM_SITE_NEWSITE
-		MENUITEM "&Open Site", IDM_SITE_OPENSITE
-		MENUITEM "&Close Site", IDM_SITE_CLOSESITE
+	MENUITEM "Sites", IDM_MGR_SITES
+	MENUITEM "Users", IDM_MGR_USERS
+END
+
+IDC_PROJ_MANAGEMENT MENU	// Project Manager Menu
+BEGIN
+	MENUITEM "Sites", IDM_MGR_SITES
+END
+
+IDC_MGR_SITE MENU		// Manager Site Access Menu
+BEGIN
+	MENUITEM "My Sites", IDM_USER_LISTMYSITES
+	MENUITEM "&Close Site", IDM_SITE_CLOSESITE
+END
+
+IDC_USER_SITE MENU		// User Site Access Menu
+BEGIN
+	MENUITEM "My Sites", IDM_USER_LISTMYSITES
+	MENUITEM "&Close Site", IDM_SITE_CLOSESITE
+END
+
+IDC_MGR_TICKETS MENU	// Manager Ticket Access Menu
+BEGIN
+	MENUITEM "Create New", IDM_TICKETS_CREATENEW
+	MENUITEM "Open Existing", IDM_TICKETS_OPENEXISTING
+	POPUP "List Site Outstanding"
+	BEGIN
+		MENUITEM "All", IDM_LISTOUTSTANDING_ALL
+		MENUITEM "Controller", IDM_LISTOUTSTANDING_CONTROLLER
+		MENUITEM "HMI", IDM_LISTOUTSTANDING_HMI
+		MENUITEM "Drawings", IDM_LISTOUTSTANDING_DRAWINGS
+	END
+	MENUITEM "List My Outstanding", IDM_TICKETS_LISTMYOUTSTANDING
+	POPUP "View History"
+		BEGIN
+		MENUITEM "All", IDM_VIEWHISTORY_ALL
+		MENUITEM "Mine", IDM_VIEWHISTORY_MINE
+	END
+END
+
+IDC_RESOURCES MENU
+BEGIN
+	MENUITEM "Add Resource", IDM_RESOURCES_ADDRESOURCE
+	MENUITEM "View Resources", IDM_RESOURCES_VIEWRESOURCES
 END
 
 /////////////////////////////////////////////////////////////////////////////

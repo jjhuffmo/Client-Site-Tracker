@@ -14,6 +14,7 @@
 #define IDI_SMALL                       108
 #define IDC_CLIENTSITETRACKER           109
 #define IDC_SITE			            110
+#define IDC_SYS_MANAGEMENT				111
 #define IDR_MAINFRAME                   128
 #define IDI_ICON1                       130
 #define IDS_DBCONNECTED                 500
@@ -39,8 +40,11 @@
 #define IDM_VIEWHISTORY_MINE            32788
 #define IDM_RESOURCES_ADDRESOURCE       32789
 #define IDM_RESOURCES_VIEWRESOURCES     32790
-#define IDM_USER_LISTMYOUTSTANDINGTICKET 32791
+#define IDM_USER_LISTMYTICKETS			 32791
 #define IDM_USER_LISTMYSITES             32792
+#define IDM_MGR_SITES					32793
+#define IDM_MGR_USERS					32794
+
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
