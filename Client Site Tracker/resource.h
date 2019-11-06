@@ -13,13 +13,16 @@
 #define IDI_CLIENTSITETRACKER           107
 #define IDI_SMALL                       108
 #define IDC_CLIENTSITETRACKER           109
-#define IDC_SITE			            110
-#define IDC_SYS_MANAGEMENT				111
+#define IDC_SITE                        110
+#define IDC_SYS_MANAGEMENT              111
 #define IDR_MAINFRAME                   128
 #define IDI_ICON1                       130
+#define IDD_USER                        131
 #define IDS_DBCONNECTED                 500
 #define IDS_DBDISCONNECTED              501
 #define IDM_SITE                        1000
+#define IDC_USERNAME                    1000
+#define IDC_USERPWD                     1001
 #define IDM_SITE_EXIT                   32771
 #define IDM_SITE_OPENSITE               32772
 #define IDM_SITE_CLOSESITE              32773
@@ -40,21 +43,20 @@
 #define IDM_VIEWHISTORY_MINE            32788
 #define IDM_RESOURCES_ADDRESOURCE       32789
 #define IDM_RESOURCES_VIEWRESOURCES     32790
-#define IDM_USER_LISTMYTICKETS			 32791
-#define IDM_USER_LISTMYSITES             32792
-#define IDM_MGR_SITES					32793
-#define IDM_MGR_USERS					32794
-
+#define IDM_USER_LISTMYTICKETS          32791
+#define IDM_USER_LISTMYSITES            32792
+#define IDM_MGR_SITES                   32793
+#define IDM_MGR_USERS                   32794
 #define IDC_STATIC                      -1
-
+#define IDLOGIN							7
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        131
+#define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32793
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

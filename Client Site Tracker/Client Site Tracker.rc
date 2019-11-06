@@ -44,13 +44,13 @@ IDI_ICON1               ICON                    "icon1.ico"
 // Menu
 //
 
-IDC_CLIENTSITETRACKER MENU	// Everyones Main Menu
+IDC_CLIENTSITETRACKER MENU
 BEGIN
     POPUP "&User"
     BEGIN
         MENUITEM "Sign In",                     IDM_USER_SIGNIN
-		MENUITEM "My Tickets", IDM_USER_LISTMYTICKETS
-		MENUITEM "E&xit",                       IDM_SITE_EXIT
+        MENUITEM "My Tickets",                  IDM_USER_LISTMYTICKETS
+        MENUITEM "E&xit",                       IDM_SITE_EXIT
     END
     POPUP "&Help"
     BEGIN
@@ -58,53 +58,54 @@ BEGIN
     END
 END
 
-IDC_SYS_MANAGEMENT MENU	// System Manager Menu
+IDC_SYS_MANAGEMENT MENU
 BEGIN
-	MENUITEM "Sites", IDM_MGR_SITES
-	MENUITEM "Users", IDM_MGR_USERS
+    MENUITEM "Sites",                       IDM_MGR_SITES
+    MENUITEM "Users",                       IDM_MGR_USERS
 END
 
-IDC_PROJ_MANAGEMENT MENU	// Project Manager Menu
+IDC_PROJ_MANAGEMENT MENU
 BEGIN
-	MENUITEM "Sites", IDM_MGR_SITES
+    MENUITEM "Sites",                       IDM_MGR_SITES
 END
 
-IDC_MGR_SITE MENU		// Manager Site Access Menu
+IDC_MGR_SITE MENU
 BEGIN
-	MENUITEM "My Sites", IDM_USER_LISTMYSITES
-	MENUITEM "&Close Site", IDM_SITE_CLOSESITE
+    MENUITEM "My Sites",                    IDM_USER_LISTMYSITES
+    MENUITEM "&Close Site",                 IDM_SITE_CLOSESITE
 END
 
-IDC_USER_SITE MENU		// User Site Access Menu
+IDC_USER_SITE MENU
 BEGIN
-	MENUITEM "My Sites", IDM_USER_LISTMYSITES
-	MENUITEM "&Close Site", IDM_SITE_CLOSESITE
+    MENUITEM "My Sites",                    IDM_USER_LISTMYSITES
+    MENUITEM "&Close Site",                 IDM_SITE_CLOSESITE
 END
 
-IDC_MGR_TICKETS MENU	// Manager Ticket Access Menu
+IDC_MGR_TICKETS MENU
 BEGIN
-	MENUITEM "Create New", IDM_TICKETS_CREATENEW
-	MENUITEM "Open Existing", IDM_TICKETS_OPENEXISTING
-	POPUP "List Site Outstanding"
-	BEGIN
-		MENUITEM "All", IDM_LISTOUTSTANDING_ALL
-		MENUITEM "Controller", IDM_LISTOUTSTANDING_CONTROLLER
-		MENUITEM "HMI", IDM_LISTOUTSTANDING_HMI
-		MENUITEM "Drawings", IDM_LISTOUTSTANDING_DRAWINGS
-	END
-	MENUITEM "List My Outstanding", IDM_TICKETS_LISTMYOUTSTANDING
-	POPUP "View History"
-		BEGIN
-		MENUITEM "All", IDM_VIEWHISTORY_ALL
-		MENUITEM "Mine", IDM_VIEWHISTORY_MINE
-	END
+    MENUITEM "Create New",                  IDM_TICKETS_CREATENEW
+    MENUITEM "Open Existing",               IDM_TICKETS_OPENEXISTING
+    POPUP "List Site Outstanding"
+    BEGIN
+        MENUITEM "All",                         IDM_LISTOUTSTANDING_ALL
+        MENUITEM "Controller",                  IDM_LISTOUTSTANDING_CONTROLLER
+        MENUITEM "HMI",                         IDM_LISTOUTSTANDING_HMI
+        MENUITEM "Drawings",                    IDM_LISTOUTSTANDING_DRAWINGS
+    END
+    MENUITEM "List My Outstanding",         IDM_TICKETS_LISTMYOUTSTANDING
+    POPUP "View History"
+    BEGIN
+        MENUITEM "All",                         IDM_VIEWHISTORY_ALL
+        MENUITEM "Mine",                        IDM_VIEWHISTORY_MINE
+    END
 END
 
 IDC_RESOURCES MENU
 BEGIN
-	MENUITEM "Add Resource", IDM_RESOURCES_ADDRESOURCE
-	MENUITEM "View Resources", IDM_RESOURCES_VIEWRESOURCES
+    MENUITEM "Add Resource",                IDM_RESOURCES_ADDRESOURCE
+    MENUITEM "View Resources",              IDM_RESOURCES_VIEWRESOURCES
 END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -134,6 +135,19 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
 END
 
+IDD_USER DIALOGEX 0, 0, 309, 176
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "User Login"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Login",IDLOGIN,198,155,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,252,155,50,14
+    EDITTEXT        IDC_USERNAME,81,27,138,14,ES_AUTOHSCROLL
+    LTEXT           "Enter User Name (domain\\ name):",IDC_STATIC,89,14,120,11
+    EDITTEXT        IDC_USERPWD,82,63,138,14,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "Enter Password:",IDC_STATIC,125,50,61,11
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -149,6 +163,14 @@ BEGIN
         RIGHTMARGIN, 163
         TOPMARGIN, 7
         BOTTOMMARGIN, 55
+    END
+
+    IDD_USER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 302
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 169
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -196,7 +218,7 @@ BEGIN
     IDC_MAIN_TOOLBAR        "Main Window Toolbar"
     IDC_MAIN_STATUS         "Main Window Status Bar"
     IDC_CLIENTSITETRACKER   "CLIENTSITETRACKER"
-	IDC_SITE				"Client Site Tracker Site Menu"
+    IDC_SITE                "Client Site Tracker Site Menu"
 END
 
 STRINGTABLE

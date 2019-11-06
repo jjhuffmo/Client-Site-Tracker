@@ -28,7 +28,7 @@ private:
 
 public:
 	int Resource_Type = 0;				// Type of resource as an int - predefined above
-	int Resource_ID = 0;				// Resource ID as identified in the resource tables
+	UINT Resource_ID = 0;				// Resource ID as identified in the resource tables
 	int Min_Security = 0;				// Minimum Security Value - any user access level high than this number will enable it
 	CString Label = "Default";
 
@@ -96,7 +96,7 @@ public:
 			}
 			if (NewValue != "Keep")
 			{
-				result = ModifyMenu(hMenu, Resource_ID, MF_BYCOMMAND | MF_STRING, NULL, (LPCTSTR)NewValue);
+				result = ModifyMenu(hMenu, Resource_ID, MF_BYCOMMAND | MF_STRING, Resource_ID, (LPCTSTR)NewValue);
 			}
 			DrawMenuBar(hWnd);
 			break;

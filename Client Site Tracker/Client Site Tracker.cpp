@@ -35,6 +35,8 @@ INT					ConnectSQL(HWND hWnd);
 void				CloseDBLinks(void);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    LoginPU(HWND, UINT, WPARAM, LPARAM);
+
 void HandleDiagnosticRecord(SQLHANDLE      hHandle,
 	SQLSMALLINT    hType,
 	RETCODE        RetCode);
@@ -101,6 +103,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
+
+	// After updating the screen messages, update system wide parameters
 
     return (int) msg.wParam;
 }
@@ -195,7 +199,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 DestroyWindow(hWnd);
                 break;
 			case IDM_USER_SIGNIN:
-				CheckUser(Current_User.User_Name);
+				if (Current_User.User_Access == 0)
+				{
+					DialogBox(hInst, MAKEINTRESOURCE(IDD_USER), hWnd, LoginPU);
+
+					//CheckUser(Current_User.User_Name);
+				}
+				else
+				{
+					CloseDBLinks();
+					CheckUser("Logout");
+				}
+
 				break;
 			case IDM_SITE_NEWSITE:
 				Validate_Security(hWnd);
@@ -208,7 +223,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_USER_LISTMYTICKETS:
 				if (Current_User.User_Access > 1000)
 				{
-					Current_User.User_Access = 0;
+					Current_User.User_Access = 100;
 				}
 				else
 				{
@@ -217,6 +232,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				//EnableMenus(hWnd, L"&Management", 0);
 				break;
             default:
+				CString MissedMessage;
+				MissedMessage.Format(L"%d", message);
+				MessageBox(hWnd, (LPCWSTR)MissedMessage, L"Action Not Caught", 0);
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
         }
@@ -242,14 +260,61 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Update System Wide Status
 		UpdateStatus(hWnd);
 
-		// Refresh the Main Window Status Bar
-		ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_UPDATE, &MainSBar);
-
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
 }
 
+// Message handler for username/password popup.
+INT_PTR CALLBACK LoginPU(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return (INT_PTR)TRUE;
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+
+		if (LOWORD(wParam) == IDLOGIN)
+		{
+			CString EUName = "";
+			CString EPwd = "";
+			CString ConnSt = "";
+			CString TestStr = "";
+			TCHAR Name[25];
+			TCHAR Pwd[25];
+
+			GetDlgItemText(hDlg, IDC_USERNAME, Name, 25);
+			GetDlgItemText(hDlg, IDC_USERPWD, Pwd, 25);
+
+			TestStr = (CString)Name + (CString)Pwd;
+			ConnSt = _T("DRIVER = { SQL Server }; SERVER = (local); DATABASE = Site_Management; User Id = ") + (CString)Name + _T(" Password = ") + (CString)Pwd + _T(";");
+
+			SQLWCHAR* ConnStrIn = (SQLWCHAR*)((LPWSTR)(LPCWSTR)ConnSt);
+
+			// Try to autoconnect to SQL
+			// Connect to the Site Management Database
+			// If we log in correctly, then move forward
+			SQLConnStatus = (ConnectSQL((HWND)wParam));
+
+			if (SQLConnStatus)
+			{
+				CheckUser((CString)Name);
+			}
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
+}
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -376,7 +441,7 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 		if (sbVals->group_changed)
 		{
 			j = 0;
-			for (i = 0; i < (int)sbVals->Sections.size(); i++)
+			for (i = 0; i < cParts; i++)
 			{
 				//if (sbVals->changed[i])
 				//{
@@ -399,7 +464,6 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 
 			//}
 		}
-
 		break;
 	}
 }
@@ -470,6 +534,10 @@ int CheckUser(CString New_User)
 	SQLRETURN results = 0;
 	CString Query = "SELECT * FROM " + (CString)USER_TABLE + " WHERE User_Name = '" + New_User + "'";
 
+	if (New_User == "Logout")
+	{
+		goto Exit;
+	}
 	TRYODBC(hdbc1,
 		SQL_HANDLE_DBC,
 		SQLExecDirect(hstmt1, (SQLWCHAR*)(LPCWSTR)(Query), SQL_NTS));
@@ -543,6 +611,9 @@ void UpdateStatus(HWND hWnd)
 	{
 			All_Status_Bars.Status_Bars[i]->Update_SBar();
 	}
+
+	// Refresh the Main Window Status Bar
+	ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_UPDATE, &MainSBar);
 }
 
 //
