@@ -532,6 +532,11 @@ int CheckUser(CString New_User)
 	SQLINTEGER sqlUserNamePtr;
 	SQLINTEGER sqlAccessLevel = 0, sqlAccessLevelPtr;
 	SQLRETURN results = 0;
+	// If the user is a domain user, truncate the domain off to get the raw name
+	if (New_User.Find(L"\\", 0) > 0)
+	{
+		New_User = New_User.Right(New_User.GetLength() - (New_User.Find(L"\\", 0) + 1));
+	}
 	CString Query = "SELECT * FROM " + (CString)USER_TABLE + " WHERE User_Name = '" + New_User + "'";
 
 	if (New_User == "Logout")
@@ -558,10 +563,12 @@ int CheckUser(CString New_User)
 	Current_User.User_Name = sqlUserName;
 	Current_User.User_Access = (int)sqlAccessLevel;
 
+	free(sqlUserName);
 	return (int)sqlAccessLevel;
 Exit:
 	Current_User.User_Access = 0;
 	Current_User.User_Name = "Not Logged In";
+	free(sqlUserName);
 	return 0;
 }
 
