@@ -1,17 +1,23 @@
 #pragma once
-
 #include <vector>
 #include <string.h>
 #include <atlstr.h>
+#include <mbstring.h>
+#include <stdio.h>
+#include <conio.h>
+#include <stdlib.h>
+#include <Windows.h>
+#include <tchar.h>
+#include <sal.h>
+#include <string>
+#include <CommCtrl.h>
+#include <algorithm>
+#include <lmcons.h>
 #include "resource.h"
 #include "Database Defs.h"
 
-
 // Buffers and variable identifiers
 #define SYSBUFF 256
-
-// Status Variables (For Status Bars, Toolboxes, Pop-ups, etc)
-INT SQLConnStatus = 0;									// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
 
 // Toolbar Commands
 #define TB_CREATE		1
@@ -25,11 +31,11 @@ INT SQLConnStatus = 0;									// SQL Connection Status Flag (0 = Disconnected, 
 // Primary Status Bar Configuration - Will Be Configurable By The User So Store In Variables
 
 // Primary Status Bar Locations - Defaults
-int PSB_SQLStat = 1;			// Database Status (Slot 1)
-int PSB_UserStat = 2;			// Active User (Slot 2)
-int PSB_Site = 4;				// Site Information (Slot 3)
-int PSB_Tickets = 5;			// Tickets Information (Slot 4)
-int PSB_Access = 3;				// Current User Access Level (Slot 5)
+int PSB_SQLStat = 0;			// Database Status (Slot 1)
+int PSB_UserStat = 1;			// Active User (Slot 2)
+int PSB_Site = 3;				// Site Information (Slot 3)
+int PSB_Tickets = 4;			// Tickets Information (Slot 4)
+int PSB_Access = 2;				// Current User Access Level (Slot 5)
 
 // All Status Variables for use in status bars, toolbars, tracking, etc.
 class Status_Var
@@ -50,7 +56,7 @@ public:
 	};
 };
 
-class STATUSBAR
+class StatusBar
 {
 private:
 	int i = 0;
@@ -85,7 +91,7 @@ public:
 			}
 		}
 	};
-	void Initialize()
+	void Initialize(void)
 	{
 		k = (int)Sections.size() - (int)Sec_Text.size();
 		for (j = 0; j <= k; j++)
@@ -99,8 +105,4 @@ public:
 	
 };
 
-class All_Project_Status_Bars
-{
-public:
-	std::vector<STATUSBAR*> Status_Bars;
-};
+std::vector<StatusBar*> All_Status_Bars;

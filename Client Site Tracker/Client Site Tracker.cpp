@@ -1,25 +1,11 @@
 // Client Site Tracker.cpp : Defines the entry point for the application.
 //
-
+#pragma once
 #include "framework.h"
 #include "Client Site Tracker.h"
 #include "Database Defs.h"
 #include "Security.h"
 #include "Status_Bars.h"
-#include <sql.h>
-#include <mbstring.h>
-#include <stdio.h>
-#include <conio.h>
-#include <stdlib.h>
-#include <Windows.h>
-#include <tchar.h>
-#include <sal.h>
-#include <string>
-#include <CommCtrl.h>
-#include <vector>
-#include <algorithm>
-#include <lmcons.h>
-
 
 #define MAX_LOADSTRING 100
 
@@ -27,24 +13,19 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+int SBars_Init = 0;								// Status Bars Initialized indicator so we don't access invalid objects
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
-INT					ConnectSQL(HWND hWnd);
-void				CloseDBLinks(void);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    LoginPU(HWND, UINT, WPARAM, LPARAM);
 
-void HandleDiagnosticRecord(SQLHANDLE      hHandle,
-	SQLSMALLINT    hType,
-	RETCODE        RetCode);
-
 void InitStatusBars(void);
 void UpdateStatus(HWND hWnd);
 void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
-void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, STATUSBAR* sbVals);
+void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals);
 int CheckUser(CString New_User);
 void Validate_Security(HWND hWnd);
 void SetSecurity(void);
@@ -59,10 +40,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-
 	// Initialize all status bars
 	InitStatusBars();
-
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -74,6 +53,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
         return FALSE;
     }
+
+
 
 	SetSecurity();
 
@@ -101,11 +82,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-        }
-    }
-
-	// After updating the screen messages, update system wide parameters
-
+		}
+		// After updating the screen messages, update system wide parameters
+		// Update System Wide Status
+		UpdateStatus(msg.hwnd);
+	}
     return (int) msg.wParam;
 }
 
@@ -213,23 +194,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				break;
 			case IDM_SITE_NEWSITE:
-				Validate_Security(hWnd);
-				DrawMenuBar(hWnd);
 				break;
 			case IDM_SITE_OPENSITE:
-				DrawMenuBar(hWnd);
 				//DestroyMenu(hMenu);
 				break;
 			case IDM_USER_LISTMYTICKETS:
-				if (Current_User.User_Access > 1000)
-				{
-					Current_User.User_Access = 100;
-				}
-				else
-				{
-					Current_User.User_Access = 5000;
-				}
-				//EnableMenus(hWnd, L"&Management", 0);
 				break;
             default:
 				CString MissedMessage;
@@ -244,9 +213,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
-			// Reset the tool bar and status bar when main window needs repainted
-			ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_REFRESH);
-			ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_REFRESH, &MainSBar);
+			if (SBars_Init)
+			{
+				// Reset the tool bar and status bar when main window needs repainted
+				ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_REFRESH);
+				ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_REFRESH, &MainSBar);
+			}
             EndPaint(hWnd, &ps);
         }
         break;
@@ -257,9 +229,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 	
     default:
-		// Update System Wide Status
-		UpdateStatus(hWnd);
-
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
@@ -382,7 +351,7 @@ void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action)
 //	SB_REFRESH - Redraws the status bar based on window size
 //	SB_UPDATE - Updates the contents of the status bar
 //
-void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, STATUSBAR* sbVals)
+void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals)
 {
 	HWND hwndStatus;
 	RECT rcClient;
@@ -422,47 +391,46 @@ void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, ST
 
 		// Calculate the right edge coordinate for each part, and
 		// copy the coordinates to the array.
-		nWidth = rcClient.right / cParts;
-		rightEdge = nWidth;
-		for (i = 0; i < cParts; i++)
+		if (cParts > 0)
 		{
-			paParts[i] = rightEdge;
-			rightEdge += nWidth;
-			// Tell the status bar to create the window parts.
-			SendMessage(GetDlgItem(hWndParent, hMenu), SB_SETPARTS, (WPARAM)cParts, (LPARAM)
-				paParts);
+			nWidth = rcClient.right / cParts;
+			rightEdge = nWidth;
+			for (i = 0; i < cParts; i++)
+			{
+				paParts[i] = rightEdge;
+				rightEdge += nWidth;
+				// Tell the status bar to create the window parts.
+				SendMessage(GetDlgItem(hWndParent, hMenu), SB_SETPARTS, (WPARAM)cParts, (LPARAM)
+					paParts);
+			}
+			SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, (WPARAM)cParts, (LPARAM)paParts);
 		}
-		SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, (WPARAM)cParts, (LPARAM) paParts);
 		break;
 
 	case SB_UPDATE:
 		// Update the sections with data
 		hwndStatus = GetDlgItem(hWndParent, hMenu);
-		if (sbVals->group_changed)
+		if (sbVals->group_changed && SBars_Init)
 		{
 			j = 0;
 			for (i = 0; i < cParts; i++)
 			{
-				//if (sbVals->changed[i])
-				//{
-
-					//LPARAM holding = (LPARAM)(LPCWSTR)sbVals->Sec_Text[i+1];
-					SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)i, (LPARAM)(LPCWSTR)sbVals->Sec_Text[i + 1]);
-					
-						sbVals->changed[i] = 0;
-				//		j++;
-					
-				//}
-				//else
-				//{
-				//	j++;
-				//}
+				if (sbVals->changed[i])
+				{
+					SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)i, (LPARAM)(LPCWSTR)sbVals->Sec_Text[i]);
+					sbVals->changed[i] = 0;
+					j++;
+				}
+				else
+				{
+					j++;
+				}
 			}
-			//if (j >= int(sbVals->Sections.size()))
-			//{
-			//	sbVals->group_changed = 0;
-
-			//}
+			if (j >= int(sbVals->Sections.size()))
+			{
+				sbVals->group_changed = 0;
+			}
+			DrawMenuBar(hWndParent);
 		}
 		break;
 	}
@@ -505,6 +473,7 @@ void InitStatusBars(void)
 	Status_Tickets.Change("No Ticket Selected");
 
 	// Load each section into the Status Bar
+	//MainSBar.Sections.push_back(&Status_SQL);
 	MainSBar.Sections.push_back(&Status_SQL);
 	MainSBar.Sections.push_back(&Status_User);
 	MainSBar.Sections.push_back(&Status_Access);
@@ -513,8 +482,9 @@ void InitStatusBars(void)
 	MainSBar.group_changed = 1;
 
 	// Create All Status Bars
-	All_Status_Bars.Status_Bars.push_back(&MainSBar);
-	
+	All_Status_Bars.push_back(&MainSBar);
+
+	SBars_Init = 1;
 }
 
 
@@ -563,12 +533,10 @@ int CheckUser(CString New_User)
 	Current_User.User_Name = sqlUserName;
 	Current_User.User_Access = (int)sqlAccessLevel;
 
-	free(sqlUserName);
 	return (int)sqlAccessLevel;
 Exit:
 	Current_User.User_Access = 0;
 	Current_User.User_Name = "Not Logged In";
-	free(sqlUserName);
 	return 0;
 }
 
@@ -614,141 +582,13 @@ void UpdateStatus(HWND hWnd)
 		Validate_Security(hWnd);
 	}
 
-	for (i = 0; i < (int)All_Status_Bars.Status_Bars.size(); i++)
+	for (i = 0; i < (int)All_Status_Bars.size(); i++)
 	{
-			All_Status_Bars.Status_Bars[i]->Update_SBar();
+			All_Status_Bars[i]->Update_SBar();
 	}
 
 	// Refresh the Main Window Status Bar
 	ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_UPDATE, &MainSBar);
-}
-
-//
-//  FUNCTION: INT ConnectSQL(HWND hWnd)
-//
-//  PURPOSE: Attempts to log into the database using Windows credentials.  Used when the program is first run.
-//
-//  NOTES:  If this function fails to connect, a flag is set and the user will have to manually sign into the database in ManConnectSQL()
-//
-INT ConnectSQL(HWND hWnd)
-{
-	// Try to connect using Windows authentication
-	if (SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv1) == SQL_ERROR)
-	{
-		//Unable to allocate an environment handle
-		exit(-1);
-	}
-
-	// Register this as an application that expects 3.x behavior,
-	// you must register something if you use AllocHandle
-
-	TRYODBC(henv1,
-		SQL_HANDLE_ENV,
-		SQLSetEnvAttr(henv1,
-			SQL_ATTR_ODBC_VERSION,
-			(SQLPOINTER)SQL_OV_ODBC3,
-			0));
-
-	// Allocate a connection
-	TRYODBC(henv1,
-		SQL_HANDLE_ENV,
-		SQLAllocHandle(SQL_HANDLE_DBC, henv1, &hdbc1));
-
-	// Connect to the driver.  Use the connection string if supplied
-	// on the input, otherwise let the driver manager prompt for input.
-	TRYODBC(hdbc1,
-		SQL_HANDLE_DBC,
-		SQLDriverConnect(hdbc1,
-			GetDesktopWindow(),
-			//NULL,
-			ConnStrIn,
-			SQL_NTS,
-			NULL,
-			0,
-			NULL,
-			SQL_DRIVER_COMPLETE));
-
-	TRYODBC(hdbc1,
-		SQL_HANDLE_DBC,
-		SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
-
-	return 1;
-
-Exit:
-	// Return failure if all calls weren't successfully completed
-	return 0;
-}
-
-//
-//  FUNCTION: CloseDBLinks(void)
-//
-//  PURPOSE: Closes (frees) all database handles
-//
-//  NOTES:  Called before exiting to release resources and do a clean exit
-//
-void CloseDBLinks(void)
-{
-	// Free ODBC handles and exit
-
-	if (hstmt1)
-	{
-		SQLFreeHandle(SQL_HANDLE_STMT, hstmt1);
-	}
-
-	if (hdbc1)
-	{
-		SQLDisconnect(hdbc1);
-		SQLFreeHandle(SQL_HANDLE_DBC, hdbc1);
-	}
-
-	if (henv1)
-	{
-		SQLFreeHandle(SQL_HANDLE_ENV, henv1);
-	}
-
-	SQLConnStatus = 0;
-}
-
-/************************************************************************
-/* HandleDiagnosticRecord : display error/warning information
-/*
-/* Parameters:
-/*      hHandle     ODBC handle
-/*      hType       Type of handle (HANDLE_STMT, HANDLE_ENV, HANDLE_DBC)
-/*      RetCode     Return code of failing command
-/************************************************************************/
-
-void HandleDiagnosticRecord(SQLHANDLE      hHandle,
-	SQLSMALLINT    hType,
-	RETCODE        RetCode)
-{
-	SQLSMALLINT iRec = 0;
-	SQLINTEGER  iError;
-	WCHAR       wszMessage[1000];
-	WCHAR       wszState[SQL_SQLSTATE_SIZE + 1];
-
-
-	if (RetCode == SQL_INVALID_HANDLE)
-	{
-		fwprintf(stderr, L"Invalid handle!\n");
-		return;
-	}
-
-	while (SQLGetDiagRec(hType,
-		hHandle,
-		++iRec,
-		wszState,
-		&iError,
-		wszMessage,
-		(SQLSMALLINT)(sizeof(wszMessage) / sizeof(WCHAR)),
-		(SQLSMALLINT*)NULL) == SQL_SUCCESS)
-	{
-		// Hide data truncated.. 
-		if (wcsncmp(wszState, L"01004", 5))
-		{
-			fwprintf(stderr, L"[%5.5s] %s (%d)\n", wszState, wszMessage, iError);
-		}
-	}
 }
 
 //
@@ -769,15 +609,22 @@ void SetSecurity(void)
 	MMB_MySites.Resource_ID = IDM_USER_LISTMYSITES;
 	MMB_MySites.Min_Security = 1;
 
+	// Main Status Bar User My Tickets
+	MMB_MyTickets.Resource_Type = RES_MENUITEM;
+	MMB_MyTickets.Resource_ID = IDM_USER_LISTMYTICKETS;
+	MMB_MyTickets.Min_Security = 1;
+
 	// Main Status Bar System Manager
 	MMB_Sys_Management.Resource_Type = RES_MENU;
 	MMB_Sys_Management.Resource_ID = IDC_SYS_MANAGEMENT;
 	MMB_Sys_Management.Min_Security = 5000;
 	MMB_Sys_Management.Label = L"&Management";
+	MMB_Sys_Management.Location = 1;
 	
 	// Push all definitions on to the stack
 	All_Security.push_back(&MMB_Login);
 	All_Security.push_back(&MMB_MySites);
+	All_Security.push_back(&MMB_MyTickets);
 	All_Security.push_back(&MMB_Sys_Management);
 }
 

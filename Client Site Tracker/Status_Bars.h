@@ -8,10 +8,9 @@
 // Remember to update the Init_Status_Bars section in Client Site Tracker.cpp to identify new ones
 
 // Main Status Bar
-STATUSBAR MainSBar;
+StatusBar MainSBar;
 Status_Var Status_SQL;
 Status_Var Status_User;
 Status_Var Status_Site;
 Status_Var Status_Tickets;
 Status_Var Status_Access;
-All_Project_Status_Bars All_Status_Bars;

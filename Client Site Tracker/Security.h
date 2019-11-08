@@ -30,6 +30,7 @@ public:
 	int Resource_Type = 0;				// Type of resource as an int - predefined above
 	UINT Resource_ID = 0;				// Resource ID as identified in the resource tables
 	int Min_Security = 0;				// Minimum Security Value - any user access level high than this number will enable it
+	int Location = 0;					// Location on a menu for menu resources
 	CString Label = "Default";
 
 	// Update the access rights and label if necessary. 
@@ -38,6 +39,7 @@ public:
 	//		RES_MENUITEM - Update the menu text or if NewValue == Keep then skip updating the text part
 	int Update(HINSTANCE hInst, HWND hWnd, CString NewValue = "Keep")
 	{
+		found = 0;
 		switch (Resource_Type)
 		{
 		// If it's a main menu item
@@ -48,26 +50,36 @@ public:
 			MenuItem.cbSize = sizeof(MENUITEMINFOW);
 
 			// Check to see if the Menu is visible, if not then add it. 
-			for (i = 0; i <= GetMenuItemCount(hMenu); i++)
+			for (i = 0; i <= GetMenuItemCount(hMenu)-1; i++)
 			{
 				MenuItem.dwTypeData = NULL;
 				result = GetMenuItemInfoW(hMenu, i, true, &MenuItem);
-				LPWSTR entry = (LPWSTR)malloc(MenuItem.cch++);
+				if (sizeof(entry) < MenuItem.cch++)
+				{
+					entry = (LPWSTR)malloc(MenuItem.cch++);
+				}
 				MenuItem.dwTypeData = entry;
 				MenuItem.cch++;
 				result = GetMenuItemInfoW(hMenu, i, true, &MenuItem);
-				if (entry == (LPCWSTR)NewValue)
+				if ((CString)entry == Label)
 				{
 					found = i;
 				}
-				//free(entry);
 			}
 			if (Current_User.User_Access >= Min_Security)  // Valid security to see
 			{
-				if (found == 0)
+				// If it doesn't exist, insert it in the proper spot
+				if (found == 0)	
 				{
 					NewMenu = LoadMenu(hInst, MAKEINTRESOURCE(Resource_ID));
-					result = AppendMenuW(hMenu, MF_POPUP, (UINT_PTR)NewMenu, Label);
+					if (Location >  GetMenuItemCount(hMenu) -1)
+					{
+						result = InsertMenuW(hMenu, GetMenuItemCount(hMenu) - 1, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
+					}
+					else
+					{
+						result = InsertMenuW(hMenu, Location, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
+					}
 					DestroyMenu(NewMenu);
 				}
 			}
@@ -79,7 +91,8 @@ public:
 					DestroyMenu(NewMenu);
 				}
 			}
-			DrawMenuBar(hWnd);
+			//free(entry);
+			//DrawMenuBar(hWnd);
 			break;
 
 		// If it's a Menu Item
@@ -98,13 +111,12 @@ public:
 			{
 				result = ModifyMenu(hMenu, Resource_ID, MF_BYCOMMAND | MF_STRING, Resource_ID, (LPCTSTR)NewValue);
 			}
-			DrawMenuBar(hWnd);
 			break;
 		}
 		return result;
 	}
 } ;
 
-Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management;
+Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets;
 
 std::vector<Resource_Security*> All_Security;

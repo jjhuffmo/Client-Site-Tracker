@@ -1,13 +1,14 @@
 #pragma once
-#include <string>
+
 #include <sql.h>
 #include <sqlext.h>
-#include <mbstring.h>
-#include "Client Site Tracker.h"
+
+INT ConnectSQL(HWND hWnd);
+void	CloseDBLinks(void);
+void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode);
 
 // Define database connection information
-SQLWCHAR *ConnStrIn = (SQLWCHAR*)(L"DRIVER={SQL Server};SERVER=(local);DATABASE=Site_Management;Trusted_Connection=yes;");
-
+SQLWCHAR* ConnStrIn = (SQLWCHAR*)(L"DRIVER={SQL Server};SERVER=(local);DATABASE=Site_Management;Trusted_Connection=yes;");
 
 #define DISPLAY_MAX 50          // Arbitrary limit on column width to display
 #define DISPLAY_FORMAT_EXTRA 3  // Per column extra display bytes (| <data> )
@@ -23,6 +24,9 @@ SQLHSTMT hstmt1 = NULL;
 WCHAR   wszInput[SQL_QUERY_SIZE];
 SHORT   gHeight = 80;       // Users screen height
 
+INT SQLConnStatus = 0;									// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
+
+
 //
 //	TABLE: USER_INFO
 //
@@ -35,6 +39,7 @@ SHORT   gHeight = 80;       // Users screen height
 #define DBUSERID		1							// Column # of ID field
 #define DBUSERNAME		2							// Column # of Name field
 #define DBUSERACCESS	3							// Column # of Access Level field
+
 // Define database structures for records here
 // User_Info Table
 class DBUSER {
@@ -62,5 +67,3 @@ public:
                                     goto Exit;  \
                                 }  \
                             }
-
-
