@@ -1,21 +1,16 @@
 // Contains all the database calls and returns
 #pragma once
-#include <string.h>
-#include <atlstr.h>
-#include <mbstring.h>
-#include <stdio.h>
-#include <conio.h>
-#include <stdlib.h>
-#include <Windows.h>
-#include <tchar.h>
-#include <sal.h>
-#include <string>
-#include <CommCtrl.h>
-#include <algorithm>
-#include <lmcons.h>
-#include <sql.h>
-#include <sqlext.h>
-#include "Client Site Tracker.h"
+
+#include "Database Defs.h"
+
+// Define database connection information
+SQLWCHAR* ConnStrIn = (SQLWCHAR*)(L"DRIVER={SQL Server};SERVER=(local);DATABASE=Site_Management;Trusted_Connection=yes;");
+SQLHENV henv1 = NULL;
+SQLHDBC hdbc1 = NULL;
+SQLHSTMT hstmt1 = NULL;
+WCHAR   wszInput[SQL_QUERY_SIZE];
+SHORT   gHeight = 80;       // Users screen height
+DBUSER Current_User;
 
 //
 //  FUNCTION: INT ConnectSQL(HWND hWnd)
@@ -144,4 +139,56 @@ void HandleDiagnosticRecord(SQLHANDLE      hHandle,
 			fwprintf(stderr, L"[%5.5s] %s (%d)\n", wszState, wszMessage, iError);
 		}
 	}
+}
+
+//
+//  FUNCTION: int CheckUser(void)
+//
+//  PURPOSE: Checks the user's rights whenever the user name changes.  If the related Access_Level == 0 then hide all options in menu other than Sign In
+//
+//  NOTES:  Will need to make sure to shut down all open windows on sign out in this section when those sections get defined.
+//
+int CheckUser(CString New_User)
+{
+	SQLINTEGER sqlUserID = 0, sqlUserIDPtr;
+	SQLWCHAR* sqlUserName = (SQLWCHAR*)malloc(USER_SIZE);
+	SQLINTEGER sqlUserNamePtr;
+	SQLINTEGER sqlAccessLevel = 0, sqlAccessLevelPtr;
+	SQLRETURN results = 0;
+	// If the user is a domain user, truncate the domain off to get the raw name
+	if (New_User.Find(L"\\", 0) > 0)
+	{
+		New_User = New_User.Right(New_User.GetLength() - (New_User.Find(L"\\", 0) + 1));
+	}
+	CString Query = "SELECT * FROM " + (CString)USER_TABLE + " WHERE User_Name = '" + New_User + "'";
+
+	if (New_User == "Logout")
+	{
+		goto Exit;
+	}
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLExecDirect(hstmt1, (SQLWCHAR*)(LPCWSTR)(Query), SQL_NTS));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLFetch(hstmt1));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLGetData(hstmt1, DBUSERID, SQL_C_SSHORT, &sqlUserID, 0, &sqlUserIDPtr));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLGetData(hstmt1, DBUSERNAME, SQL_WCHAR, sqlUserName, USER_SIZE, &sqlUserNamePtr));
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLGetData(hstmt1, DBUSERACCESS, SQL_C_SSHORT, &sqlAccessLevel, 0, &sqlAccessLevelPtr));
+
+	Current_User.User_ID = (int)sqlUserID;
+	Current_User.User_Name = sqlUserName;
+	Current_User.User_Access = (int)sqlAccessLevel;
+
+	return (int)sqlAccessLevel;
+Exit:
+	Current_User.User_Access = 0;
+	Current_User.User_Name = "Not Logged In";
+	return 0;
 }

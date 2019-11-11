@@ -1,14 +1,16 @@
 #pragma once
+#ifndef DATABASE_H
+#define DATABASE_H
 
-#include <sql.h>
-#include <sqlext.h>
+
+#include "Client Site Tracker.h"
+
+extern INT SQLConnStatus;
 
 INT ConnectSQL(HWND hWnd);
 void	CloseDBLinks(void);
 void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode);
 
-// Define database connection information
-SQLWCHAR* ConnStrIn = (SQLWCHAR*)(L"DRIVER={SQL Server};SERVER=(local);DATABASE=Site_Management;Trusted_Connection=yes;");
 
 #define DISPLAY_MAX 50          // Arbitrary limit on column width to display
 #define DISPLAY_FORMAT_EXTRA 3  // Per column extra display bytes (| <data> )
@@ -17,15 +19,6 @@ SQLWCHAR* ConnStrIn = (SQLWCHAR*)(L"DRIVER={SQL Server};SERVER=(local);DATABASE=
 #define NULL_SIZE           6   // <NULL>
 #define SQL_QUERY_SIZE      1000 // Max. Num characters for SQL Query passed in.
 #define PIPE                L'|'
-
-SQLHENV henv1 = NULL;
-SQLHDBC hdbc1 = NULL;
-SQLHSTMT hstmt1 = NULL;
-WCHAR   wszInput[SQL_QUERY_SIZE];
-SHORT   gHeight = 80;       // Users screen height
-
-INT SQLConnStatus = 0;									// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
-
 
 //
 //	TABLE: USER_INFO
@@ -42,13 +35,12 @@ INT SQLConnStatus = 0;									// SQL Connection Status Flag (0 = Disconnected, 
 
 // Define database structures for records here
 // User_Info Table
-class DBUSER {
+struct DBUSER {
 public:
 	int User_ID = 0;
 	CString User_Name;
 	int User_Access = 0;
-} Current_User;
-
+};
 
 /*******************************************/
 /* Macro to call ODBC functions and        */
@@ -67,3 +59,6 @@ public:
                                     goto Exit;  \
                                 }  \
                             }
+
+
+#endif // !DATABASE_H

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <atlstr.h>
-#include "resource.h"
-#include <vector>
-#include <WinUser.h>
+#ifndef SECURITY_H
+#define SECURITY_H
+
+#include "Client Site Tracker.h"
+#include "Database Defs.h"
 
 // Define all the security levels for main program settings - valid ranges are 0-9999
 // The indivdual site, ticket, asset, etc. security levels will be set by object
@@ -37,7 +38,7 @@ public:
 	// NewValue means different things to different resources:
 	//		RES_MENU - The title of the pop-up menu to see if it exists or to give it a title when created
 	//		RES_MENUITEM - Update the menu text or if NewValue == Keep then skip updating the text part
-	int Update(HINSTANCE hInst, HWND hWnd, CString NewValue = "Keep")
+	int Update(HINSTANCE hInst, HWND hWnd, int AccessLevel = 0, CString NewValue = "Keep")
 	{
 		found = 0;
 		switch (Resource_Type)
@@ -66,7 +67,7 @@ public:
 					found = i;
 				}
 			}
-			if (Current_User.User_Access >= Min_Security)  // Valid security to see
+			if (AccessLevel >= Min_Security)  // Valid security to see
 			{
 				// If it doesn't exist, insert it in the proper spot
 				if (found == 0)	
@@ -99,7 +100,7 @@ public:
 		case RES_MENUITEM:
 			HMENU hMenu;
 			hMenu = GetMenu(hWnd);
-			if (Current_User.User_Access >= Min_Security)
+			if (AccessLevel >= Min_Security)
 			{
 				result = EnableMenuItem(hMenu, Resource_ID, MF_ENABLED);
 			}
@@ -117,6 +118,4 @@ public:
 	}
 } ;
 
-Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets;
-
-std::vector<Resource_Security*> All_Security;
+#endif // !SECURITY_H

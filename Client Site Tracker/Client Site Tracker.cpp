@@ -1,11 +1,7 @@
 // Client Site Tracker.cpp : Defines the entry point for the application.
 //
 #pragma once
-#include "framework.h"
 #include "Client Site Tracker.h"
-#include "Database Defs.h"
-#include "Security.h"
-#include "Status_Bars.h"
 
 #define MAX_LOADSTRING 100
 
@@ -15,21 +11,32 @@ WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 int SBars_Init = 0;								// Status Bars Initialized indicator so we don't access invalid objects
 
-// Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    LoginPU(HWND, UINT, WPARAM, LPARAM);
+StatusBar MainSBar;
+Status_Var Status_SQL;
+Status_Var Status_User;
+Status_Var Status_Site;
+Status_Var Status_Tickets;
+Status_Var Status_Access;
 
-void InitStatusBars(void);
-void UpdateStatus(HWND hWnd);
-void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
-void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals);
-int CheckUser(CString New_User);
-void Validate_Security(HWND hWnd);
-void SetSecurity(void);
-void EnableMenus(HWND hWnd, CString MenuName, INT State);
+// Primary Status Bar Locations - Defaults
+int PSB_SQLStat = 0;			// Database Status (Slot 1)
+int PSB_UserStat = 1;			// Active User (Slot 2)
+int PSB_Site = 3;				// Site Information (Slot 3)
+int PSB_Tickets = 4;			// Tickets Information (Slot 4)
+int PSB_Access = 2;				// Current User Access Level (Slot 5)
+INT SQLConnStatus = 0;			// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
+
+Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets;
+
+std::vector<Resource_Security*> All_Security;
+std::vector<StatusBar*> All_Status_Bars;
+
+extern DBUSER Current_User;
+extern SQLWCHAR* ConnStrIn;
+
+extern void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
+extern void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals);
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -40,7 +47,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-	// Initialize all status bars
+	// Initialize all status bars;
 	InitStatusBars();
 
     // Initialize global strings
@@ -55,8 +62,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
 
-
-	SetSecurity();
+		SetSecurity();
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
 
@@ -253,20 +259,18 @@ INT_PTR CALLBACK LoginPU(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		if (LOWORD(wParam) == IDLOGIN)
 		{
-			CString EUName = "";
-			CString EPwd = "";
+			// Try logging in as a SQL User
+			// This section will be updated in the future to use LogonUserW to use other network users through AD
 			CString ConnSt = "";
-			CString TestStr = "";
 			TCHAR Name[25];
 			TCHAR Pwd[25];
 
 			GetDlgItemText(hDlg, IDC_USERNAME, Name, 25);
 			GetDlgItemText(hDlg, IDC_USERPWD, Pwd, 25);
 
-			TestStr = (CString)Name + (CString)Pwd;
-			ConnSt = _T("DRIVER = { SQL Server }; SERVER = (local); DATABASE = Site_Management; User Id = ") + (CString)Name + _T(" Password = ") + (CString)Pwd + _T(";");
+			//ConnSt = _T("DRIVER = { SQL Server }; SERVER = (local); DATABASE = Site_Management; User Id = ") + (CString)Name + _T("; Password = ") + (CString)Pwd + _T(";");
 
-			SQLWCHAR* ConnStrIn = (SQLWCHAR*)((LPWSTR)(LPCWSTR)ConnSt);
+			//ConnStrIn = (SQLWCHAR*)((LPWSTR)(LPCWSTR)ConnSt);
 
 			// Try to autoconnect to SQL
 			// Connect to the Site Management Database
@@ -306,330 +310,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 //
-//  FUNCTION: ManageToolBar(HWND hWndParent, HINSTANCE hInst, int Action)
-//
-//  PURPOSE: Manages the primary toolbar
-//
-//  TB_CREATE - Creates the toolbar
-//	TB_RESIZE - Changes the size of the toolbar based on window size
-//	TB_MODIFY - Modifies the toolbar based on active options
-//
-void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action)
-{
-	HWND hTool;
-
-	INITCOMMONCONTROLSEX cctrls;
-	switch (Action)
-		{
-		case TB_CREATE:
-			// Ensure that the common control DLL is loaded. 
-			cctrls.dwSize = sizeof(INITCOMMONCONTROLSEX);
-			cctrls.dwICC = ICC_BAR_CLASSES;
-
-			InitCommonControlsEx(&cctrls);
-
-			// Create Toolbar
-			hTool = CreateWindowEx(0, TOOLBARCLASSNAMEW, NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0,
-				hWndParent, (HMENU)hMenu, GetModuleHandle(NULL), NULL);
-			// Send the TB_BUTTONSTRUCTSIZE message, which is required for
-			// backward compatibility.
-			SendMessage(hTool, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
-			break;
-
-		case TB_REFRESH:
-			SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, 0, 0);
-			break;
-		}
-}
-
-//
-//  FUNCTION: ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int cParts, int Action)
-//
-//  PURPOSE: Manages the primary toolbar
-//
-//  SB_CREATE - Creates the status bar
-//	SB_REFRESH - Redraws the status bar based on window size
-//	SB_UPDATE - Updates the contents of the status bar
-//
-void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals)
-{
-	HWND hwndStatus;
-	RECT rcClient;
-	int paParts[10];
-	int i, j, nWidth;
-	int rightEdge;
-	INITCOMMONCONTROLSEX cctrls;
-	int cParts = (int) sbVals->Sections.size();
-
-	switch (Action)
-	{
-	case SB_CREATE:
-		// Ensure that the common control DLL is loaded. 
-		cctrls.dwSize = sizeof(INITCOMMONCONTROLSEX);
-		cctrls.dwICC = ICC_BAR_CLASSES;
-
-		InitCommonControlsEx(&cctrls);
-
-		// Create the status bar.
-		hwndStatus = CreateWindowEx(
-			0,							// no extended styles
-			STATUSCLASSNAMEW,			// name of status bar class
-			(PCTSTR)NULL,				// no text when first created
-			SBARS_SIZEGRIP |			// includes a sizing grip
-			WS_CHILD | WS_VISIBLE,		// creates a visible child window
-			0, 0, 0, 0,					// ignores size and position
-			hWndParent,					// handle to parent window
-			(HMENU)hMenu,				// child window identifier
-			hInst,						// handle to application instance
-			NULL);						// no window creation data
-		SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)0, (LPARAM)L"Initializing:");
-
-	case SB_REFRESH:
-		//SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, 0, 0);
-		// Get the coordinates of the parent window's client area.
-		GetClientRect(hWndParent, &rcClient);
-
-		// Calculate the right edge coordinate for each part, and
-		// copy the coordinates to the array.
-		if (cParts > 0)
-		{
-			nWidth = rcClient.right / cParts;
-			rightEdge = nWidth;
-			for (i = 0; i < cParts; i++)
-			{
-				paParts[i] = rightEdge;
-				rightEdge += nWidth;
-				// Tell the status bar to create the window parts.
-				SendMessage(GetDlgItem(hWndParent, hMenu), SB_SETPARTS, (WPARAM)cParts, (LPARAM)
-					paParts);
-			}
-			SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, (WPARAM)cParts, (LPARAM)paParts);
-		}
-		break;
-
-	case SB_UPDATE:
-		// Update the sections with data
-		hwndStatus = GetDlgItem(hWndParent, hMenu);
-		if (sbVals->group_changed && SBars_Init)
-		{
-			j = 0;
-			for (i = 0; i < cParts; i++)
-			{
-				if (sbVals->changed[i])
-				{
-					SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)i, (LPARAM)(LPCWSTR)sbVals->Sec_Text[i]);
-					sbVals->changed[i] = 0;
-					j++;
-				}
-				else
-				{
-					j++;
-				}
-			}
-			if (j >= int(sbVals->Sections.size()))
-			{
-				sbVals->group_changed = 0;
-			}
-			DrawMenuBar(hWndParent);
-		}
-		break;
-	}
-}
-
-//
-//  FUNCTION: InitStatusBars(void)
-//
-//  PURPOSE: Initializes all the status bars in the system by creating default entries and building the bar content objects
-//
-//  NOTES:  All status bars that will be used in the program should be initialized here and added to the 
-//			All_Status_Bars group so the content will be updated consistently
-//
-void InitStatusBars(void)
-{
-	// Main Status Bar (Primary Window)
-
-	// Define each section before pushing definitions onto stack
-	// SQL Connection Status
-	Status_SQL.Prefix = "SQL: ";
-	Status_SQL.Type = PSB_SQLStat;
-	Status_SQL.Change("Disconnected");
-
-	// User Information
-	Status_User.Prefix = "User: ";
-	Status_User.Type = PSB_UserStat;
-
-	// User Access Level
-	Status_Access.Prefix = "Access Level: ";
-	Status_Access.Type = PSB_Access;
-
-	// Site Information
-	Status_Site.Prefix = "Site: ";
-	Status_Site.Type = PSB_Site;
-	Status_Site.Change("No Site Selected");
-
-	// Ticket Information
-	Status_Tickets.Prefix = "Ticket: ";
-	Status_Tickets.Type = PSB_Tickets;
-	Status_Tickets.Change("No Ticket Selected");
-
-	// Load each section into the Status Bar
-	//MainSBar.Sections.push_back(&Status_SQL);
-	MainSBar.Sections.push_back(&Status_SQL);
-	MainSBar.Sections.push_back(&Status_User);
-	MainSBar.Sections.push_back(&Status_Access);
-	MainSBar.Sections.push_back(&Status_Site);
-	MainSBar.Sections.push_back(&Status_Tickets);
-	MainSBar.group_changed = 1;
-
-	// Create All Status Bars
-	All_Status_Bars.push_back(&MainSBar);
-
-	SBars_Init = 1;
-}
-
-
-//
-//  FUNCTION: int CheckUser(void)
-//
-//  PURPOSE: Checks the user's rights whenever the user name changes.  If the related Access_Level == 0 then hide all options in menu other than Sign In
-//
-//  NOTES:  Will need to make sure to shut down all open windows on sign out in this section when those sections get defined.
-//
-int CheckUser(CString New_User)
-{
-	SQLINTEGER sqlUserID = 0, sqlUserIDPtr;
-	SQLWCHAR *sqlUserName = (SQLWCHAR*)malloc(USER_SIZE);
-	SQLINTEGER sqlUserNamePtr;
-	SQLINTEGER sqlAccessLevel = 0, sqlAccessLevelPtr;
-	SQLRETURN results = 0;
-	// If the user is a domain user, truncate the domain off to get the raw name
-	if (New_User.Find(L"\\", 0) > 0)
-	{
-		New_User = New_User.Right(New_User.GetLength() - (New_User.Find(L"\\", 0) + 1));
-	}
-	CString Query = "SELECT * FROM " + (CString)USER_TABLE + " WHERE User_Name = '" + New_User + "'";
-
-	if (New_User == "Logout")
-	{
-		goto Exit;
-	}
-	TRYODBC(hdbc1,
-		SQL_HANDLE_DBC,
-		SQLExecDirect(hstmt1, (SQLWCHAR*)(LPCWSTR)(Query), SQL_NTS));
-	TRYODBC(hdbc1,
-		SQL_HANDLE_DBC, 
-		SQLFetch(hstmt1));
-	TRYODBC(hdbc1,
-		SQL_HANDLE_DBC,
-		SQLGetData(hstmt1, DBUSERID, SQL_C_SSHORT, &sqlUserID, 0, &sqlUserIDPtr));
-	TRYODBC(hdbc1,
-		SQL_HANDLE_DBC,
-		SQLGetData(hstmt1, DBUSERNAME, SQL_WCHAR, sqlUserName, USER_SIZE, &sqlUserNamePtr));
-	TRYODBC(hdbc1,
-		SQL_HANDLE_DBC,
-		SQLGetData(hstmt1, DBUSERACCESS, SQL_C_SSHORT, &sqlAccessLevel, 0, &sqlAccessLevelPtr));
-
-	Current_User.User_ID = (int)sqlUserID;
-	Current_User.User_Name = sqlUserName;
-	Current_User.User_Access = (int)sqlAccessLevel;
-
-	return (int)sqlAccessLevel;
-Exit:
-	Current_User.User_Access = 0;
-	Current_User.User_Name = "Not Logged In";
-	return 0;
-}
-
-//
-//  FUNCTION: UpdateStatus(void)
-//
-//  PURPOSE: Updates all the status bar(s) content in the project
-//
-//  NOTES:  This section should not be used to do control of variables, but just reporting the status
-//
-void UpdateStatus(HWND hWnd)
-{
-	//Update All System Wide Status Objects (Status Bars/Tool Bars/etc)
-	int i = 0;
-	CString Access = L"0";
-
-	if (SQLConnStatus)
-	{
-		Status_SQL.Change("Connected");
-	}
-	else
-	{
-		Status_SQL.Change("Disconnected");
-	}
-	Access.Format(L"%d", Current_User.User_Access);
-	Status_Access.Change(Access);
-	Status_User.Change(Current_User.User_Name);
-	if (Status_User.changed)
-	{
-		if (Current_User.User_Name != "Not Logged In")
-		{
-			MMB_Login.Update(hInst, hWnd, L"Sign Out");
-		}
-		else
-		{
-			MMB_Login.Update(hInst, hWnd, L"Sign In");
-		}
-	}
-
-	// Validate security access
-	if (Status_Access.changed)
-	{
-		Validate_Security(hWnd);
-	}
-
-	for (i = 0; i < (int)All_Status_Bars.size(); i++)
-	{
-			All_Status_Bars[i]->Update_SBar();
-	}
-
-	// Refresh the Main Window Status Bar
-	ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_UPDATE, &MainSBar);
-}
-
-//
-//  FUNCTION: SetSecurity(void)
-//
-//  PURPOSE: Sets the security levels for resources, also initializes the resource class for changing text if necessary
-
-//
-void SetSecurity(void)
-{
-	// Main Status Bar User Sign In/Out
-	MMB_Login.Resource_Type = RES_MENUITEM;
-	MMB_Login.Resource_ID = IDM_USER_SIGNIN;
-	MMB_Login.Min_Security = 0;
-
-	// Main Status Bar User My Sites
-	MMB_MySites.Resource_Type = RES_MENUITEM;
-	MMB_MySites.Resource_ID = IDM_USER_LISTMYSITES;
-	MMB_MySites.Min_Security = 1;
-
-	// Main Status Bar User My Tickets
-	MMB_MyTickets.Resource_Type = RES_MENUITEM;
-	MMB_MyTickets.Resource_ID = IDM_USER_LISTMYTICKETS;
-	MMB_MyTickets.Min_Security = 1;
-
-	// Main Status Bar System Manager
-	MMB_Sys_Management.Resource_Type = RES_MENU;
-	MMB_Sys_Management.Resource_ID = IDC_SYS_MANAGEMENT;
-	MMB_Sys_Management.Min_Security = 5000;
-	MMB_Sys_Management.Label = L"&Management";
-	MMB_Sys_Management.Location = 1;
-	
-	// Push all definitions on to the stack
-	All_Security.push_back(&MMB_Login);
-	All_Security.push_back(&MMB_MySites);
-	All_Security.push_back(&MMB_MyTickets);
-	All_Security.push_back(&MMB_Sys_Management);
-}
-
-
-//
 //  FUNCTION: Validate_Security(void)
 //
 //  PURPOSE: Anytime the security access value changes, go through and modify system wide settings to lock out or disable controls
@@ -645,43 +325,6 @@ void Validate_Security(HWND hWnd)
 	
 	for (i = 0; i < Records; i++)
 	{
-		All_Security[i]->Update(hInst, hWnd);
-	}
-}
-
-void EnableMenus(HWND hWnd, CString MenuName, INT State)
-{
-	HMENU NewMenu;
-	int result = 0;
-	int i = 0;
-	MENUITEMINFO MenuItem = { sizeof(LPMENUITEMINFO) };
-	//LPWSTR entry;
-	int found = 0;
-	
-	MenuItem.fMask = MIIM_STRING | MIIM_ID;
-	MenuItem.fType = MIIM_STRING;
-	MenuItem.cbSize = sizeof(MENUITEMINFOW);
-
-	// Check to see if there's a Site2 Menu, if not then add it. 
-	for (i = 0; i <= GetMenuItemCount(GetMenu(hWnd)); i++)
-	{
-		MenuItem.dwTypeData = NULL;
-		result = GetMenuItemInfoW(GetMenu(hWnd), i, true, &MenuItem);
-		//entry = new (LPWSTR);
-		LPWSTR entry = (LPWSTR) malloc(MenuItem.cch ++);
-		MenuItem.dwTypeData = entry;
-		MenuItem.cch++;
-		result = GetMenuItemInfoW(GetMenu(hWnd), i, true, &MenuItem);
-		if (MenuItem.dwTypeData == L"&Site2")
-		{
-			found = 1;
-		}
-		free(entry);
-	}
-	if (found == 0)
-	{
-		NewMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDC_SITE));
-		result = AppendMenuW(GetMenu(hWnd), MF_POPUP, (UINT_PTR)NewMenu, L"Site2");
-		DestroyMenu(NewMenu);
+		All_Security[i]->Update(hInst, hWnd, Current_User.User_Access);
 	}
 }

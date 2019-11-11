@@ -156,14 +156,15 @@
     <ClInclude Include="Client Site Tracker.h" />
     <ClInclude Include="Database Defs.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Menus And Bars.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="Status_Bars.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Security.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client Site Tracker.cpp" />
     <ClCompile Include="Database.cpp" />
+    <ClCompile Include="Menus And Bars.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Client Site Tracker.rc" />

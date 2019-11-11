@@ -30,10 +30,10 @@
     <ClInclude Include="Database Defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Status_Bars.h">
+    <ClInclude Include="Security.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Security.h">
+    <ClInclude Include="Menus And Bars.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -58,6 +58,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Database.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Menus And Bars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
