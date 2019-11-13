@@ -19,8 +19,8 @@ class Status_Var
 public:
 	CString Prefix;
 	CString Value;
-	int Type = 0;
-	int changed = 1;
+	INT Type = 0;
+	INT changed = 1;
 
 	void Change(CString NewValue)
 	{
@@ -51,11 +51,11 @@ public:
 	{
 		//LPARAM holding;
 		// If the location is bigger than the vector, initialize the vector properly
-		if ((int)Sec_Text.size() < (int)Sections.size())
+		if (Sec_Text.size() < Sections.size())
 		{
 			Initialize();
 		}
-		for (i = 0; i < (int)Sections.size(); i++)
+		for (i = 0; i < INT{ Sections.size() }; i++)
 		{
 			if (Sections[i]->changed)
 			{
