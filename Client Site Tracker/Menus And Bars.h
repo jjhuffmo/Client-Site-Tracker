@@ -35,7 +35,7 @@ public:
 class StatusBar
 {
 private:
-	int i = 0;
+	unsigned int i = 0;
 	int j = 0;
 	int k = 0;
 
@@ -51,11 +51,11 @@ public:
 	{
 		//LPARAM holding;
 		// If the location is bigger than the vector, initialize the vector properly
-		if (Sec_Text.size() < Sections.size())
+		if (Sec_Text.size() < Sections.size() )
 		{
 			Initialize();
 		}
-		for (i = 0; i < INT{ Sections.size() }; i++)
+		for (i = 0; i < Sections.size() ; i++)
 		{
 			if (Sections[i]->changed)
 			{
@@ -96,7 +96,7 @@ extern int PSB_UserStat;
 extern int PSB_Site;				
 extern int PSB_Tickets;			
 extern int PSB_Access;
-extern Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets;
+extern Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB_Sites, MMB_Tickets;
 
 extern std::vector<Resource_Security*> All_Security;
 extern std::vector<StatusBar*> All_Status_Bars;

@@ -20,6 +20,7 @@
 #include <sqlext.h>
 #include <sql.h>
 #include <sqlext.h>
+#include <memory>
 #include "framework.h"
 #include "resource.h"
 

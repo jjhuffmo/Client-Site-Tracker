@@ -15,6 +15,7 @@
 #define IDC_CLIENTSITETRACKER           109
 #define IDC_SITE                        110
 #define IDC_SYS_MANAGEMENT              111
+#define IDC_USER_SITE		            112
 #define IDR_MAINFRAME                   128
 #define IDI_ICON1                       130
 #define IDD_USER                        131

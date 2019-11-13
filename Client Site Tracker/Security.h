@@ -32,6 +32,8 @@ public:
 	UINT Resource_ID = 0;				// Resource ID as identified in the resource tables
 	int Min_Security = 0;				// Minimum Security Value - any user access level high than this number will enable it
 	int Location = 0;					// Location on a menu for menu resources
+	int Active_Pos = 0;					// Active Position it's displayed, 0 means not displayed
+
 	CString Label = "Default";
 
 	// Update the access rights and label if necessary. 
@@ -50,55 +52,57 @@ public:
 			MenuItem.fType = MIIM_STRING;
 			MenuItem.cbSize = sizeof(MENUITEMINFOW);
 
+			MenuItem.dwTypeData = NULL;
+			result = GetMenuItemInfoW(hMenu, i, true, &MenuItem);
+
 			// Check to see if the Menu is visible, if not then add it. 
-			for (i = 0; i <= GetMenuItemCount(hMenu)-1; i++)
+			/*for (i = 0; i <= GetMenuItemCount(hMenu)-1; i++)
 			{
-				MenuItem.dwTypeData = NULL;
-				result = GetMenuItemInfoW(hMenu, i, true, &MenuItem);
-				if (sizeof(entry) < MenuItem.cch++)
-				{
-					entry = (LPWSTR)malloc(MenuItem.cch++);
-				}
+				//if (sizeof(entry) < MenuItem.cch++)
+				//{
+					entry = (LPWSTR)LocalAlloc(LMEM_FIXED,MenuItem.cch++);
+				//}
 				MenuItem.dwTypeData = entry;
 				MenuItem.cch++;
 				result = GetMenuItemInfoW(hMenu, i, true, &MenuItem);
+				entry = (LPWSTR) LocalReAlloc(entry, sizeof(MENUITEMINFOW) + MenuItem.cch, LMEM_MOVEABLE);
 				if ((CString)entry == Label)
 				{
 					found = i;
 				}
-			}
+			}*/
 			if (AccessLevel >= Min_Security)  // Valid security to see
 			{
 				// If it doesn't exist, insert it in the proper spot
-				if (found == 0)	
+				if (Active_Pos == 0)	
 				{
 					NewMenu = LoadMenu(hInst, MAKEINTRESOURCE(Resource_ID));
-					if (Location >  GetMenuItemCount(hMenu) -1)
-					{
-						result = InsertMenuW(hMenu, GetMenuItemCount(hMenu) - 1, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
-					}
-					else
+					if (Location <  GetMenuItemCount(hMenu) +1)
 					{
 						result = InsertMenuW(hMenu, Location, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
 					}
+					else
+					{
+						result = InsertMenuW(hMenu, GetMenuItemCount(hMenu) - 1, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
+					}
 					DestroyMenu(NewMenu);
+					Active_Pos = 1;
 				}
 			}
 			else
 			{
-				if (found > 0)
+				if (Active_Pos > 0)
 				{
-					result = DeleteMenu(hMenu, found, MF_BYPOSITION);
+					result = DeleteMenu(hMenu, Location, MF_BYPOSITION);
 					DestroyMenu(NewMenu);
+					Active_Pos = 0;
 				}
 			}
-			//free(entry);
-			//DrawMenuBar(hWnd);
 			break;
 
 		// If it's a Menu Item
 		case RES_MENUITEM:
-			HMENU hMenu;
+			//HMENU hMenu;
 			hMenu = GetMenu(hWnd);
 			if (AccessLevel >= Min_Security)
 			{

@@ -26,7 +26,7 @@ int PSB_Tickets = 4;			// Tickets Information (Slot 4)
 int PSB_Access = 2;				// Current User Access Level (Slot 5)
 INT SQLConnStatus = 0;			// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
 
-Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets;
+Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB_Sites, MMB_Tickets;
 
 std::vector<Resource_Security*> All_Security;
 std::vector<StatusBar*> All_Status_Bars;
@@ -319,12 +319,18 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 void Validate_Security(HWND hWnd)
 {
 	int i = 0;
+	int x = 0;
 
 	int Records = All_Security.size();
+	std::vector<int> MenuPlace;
 
-	
+	MenuPlace.resize(Records,0);
 	for (i = 0; i < Records; i++)
 	{
 		All_Security[i]->Update(hInst, hWnd, Current_User.User_Access);
+		if (All_Security[i]->Active_Pos > 0)
+		{
+
+		}
 	}
 }

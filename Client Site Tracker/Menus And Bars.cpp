@@ -234,7 +234,7 @@ void UpdateStatus(HWND hWnd)
 	{
 		All_Status_Bars[i]->Update_SBar();
 	}
-
+	
 	// Refresh the Main Window Status Bar
 	ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_UPDATE, &MainSBar);
 }
@@ -269,9 +269,17 @@ void SetSecurity(void)
 	MMB_Sys_Management.Label = L"&Management";
 	MMB_Sys_Management.Location = 1;
 
+	// Main Status Bar System Manager
+	MMB_Sites.Resource_Type = RES_MENU;
+	MMB_Sites.Resource_ID = IDC_USER_SITE;
+	MMB_Sites.Min_Security = 1000;
+	MMB_Sites.Label = L"&Sites";
+	MMB_Sites.Location = 2;
+
 	// Push all definitions on to the stack
 	All_Security.push_back(&MMB_Login);
 	All_Security.push_back(&MMB_MySites);
 	All_Security.push_back(&MMB_MyTickets);
 	All_Security.push_back(&MMB_Sys_Management);
+	All_Security.push_back(&MMB_Sites);
 }
