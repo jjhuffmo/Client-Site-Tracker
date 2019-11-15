@@ -32,6 +32,7 @@
 ATOM                MyRegisterClass(HINSTANCE hInstance) noexcept;
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK    ChildWndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    LoginPU(HWND, UINT, WPARAM, LPARAM);
 
@@ -42,6 +43,7 @@ void UpdateStatus(HWND hWnd);
 int CheckUser(CString New_User);
 void Validate_Security(HWND hWnd);
 void SetSecurity(void);
+BOOL Show_Sites(HINSTANCE hInstance, HWND Owner, int nCmdShow);
 
 // Buffers and variable identifiers
 #define SYSBUFF 256

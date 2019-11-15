@@ -9,7 +9,9 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+WCHAR cszWindowClass[MAX_LOADSTRING];            // the main window class name
 int SBars_Init = 0;								// Status Bars Initialized indicator so we don't access invalid objects
+HWND hWndClient;
 
 StatusBar MainSBar;
 Status_Var Status_SQL;
@@ -26,9 +28,9 @@ int PSB_Tickets = 4;			// Tickets Information (Slot 4)
 int PSB_Access = 2;				// Current User Access Level (Slot 5)
 INT SQLConnStatus = 0;			// SQL Connection Status Flag (0 = Disconnected, 1 = Connected)
 
-Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB_Sites, MMB_Tickets;
+Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB_Sites, MMB_Tickets, MMB_CloseSite, MMB_Resources;
 
-std::vector<Resource_Security*> All_Security;
+std::vector<Resource_Security*> MMB_Security;
 std::vector<StatusBar*> All_Status_Bars;
 
 extern DBUSER Current_User;
@@ -52,8 +54,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_CLIENTSITETRACKER, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+    LoadStringW(hInstance, IDC_CLIENTSITETRACKER, szWindowClass, MAX_LOADSTRING);    
+	LoadStringW(hInstance, IDC_CLIENTSITETRACKER_CHILD, cszWindowClass, MAX_LOADSTRING);
+	MyRegisterClass(hInstance);
 
     // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow))
@@ -84,7 +87,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        if (!TranslateMDISysAccel(msg.hwnd, &msg) && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -114,12 +117,20 @@ ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_CLIENTSITETRACKER));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_APPWORKSPACE+1);
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_CLIENTSITETRACKER);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    return RegisterClassExW(&wcex);
+	RegisterClassExW(&wcex);
+
+	wcex.lpfnWndProc = ChildWndProc;
+	wcex.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_CLIENTSITETRACKER));
+	wcex.lpszMenuName = (LPCTSTR)NULL;
+	wcex.cbWndExtra = 0; // CBWNDEXTRA;
+	wcex.lpszClassName = cszWindowClass;
+
+	return RegisterClassExW(&wcex);
 }
 
 //
@@ -135,9 +146,15 @@ ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
+   CLIENTCREATESTRUCT ccs;
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   ccs.idFirstChild = 1200;
+
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+
+   hWndClient = CreateWindowW(L"MDICLIENT", (LPCTSTR) NULL, WS_CHILD | WS_CLIPCHILDREN,
+	   0, 0, 0, 0, hWnd, nullptr, hInstance, (LPSTR) &ccs);
 
    if (!hWnd)
    {
@@ -150,6 +167,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    SQLConnStatus = (ConnectSQL(hWnd));
 
    ShowWindow(hWnd, nCmdShow);
+   ShowWindow(hWndClient, SW_SHOW);
    UpdateWindow(hWnd);
 
    // Generate the main Toolbar and the main Status Bar
@@ -199,13 +217,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 
 				break;
+			case IDM_MGR_SITES:
+				if (MMB_Tickets.Enabled)
+				{
+					MMB_Tickets.Enabled = 0;
+				}
+				else
+				{
+					MMB_Tickets.Enabled = 1;
+				}
+				Validate_Security(hWnd);
+				break;
 			case IDM_SITE_NEWSITE:
 				break;
 			case IDM_SITE_OPENSITE:
-				//DestroyMenu(hMenu);
+
 				break;
 			case IDM_USER_LISTMYTICKETS:
+				if (MMB_Resources.Enabled)
+				{
+					MMB_Resources.Enabled = 0;
+				}
+				else
+				{
+					MMB_Resources.Enabled = 1;
+				}
+				Validate_Security(hWnd);
 				break;
+			case IDM_USER_LISTMYSITES:
+				Show_Sites(hInst, hWnd, SW_SHOWNORMAL);
+				break;
+
             default:
 				CString MissedMessage;
 				MissedMessage.Format(L"%d", message);
@@ -238,6 +280,101 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
+}
+
+LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+	{
+		int wmId = LOWORD(wParam);
+		// Parse the menu selections:
+		switch (wmId)
+		{
+		case IDM_ABOUT:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			break;
+		case IDM_SITE_EXIT:
+			DestroyWindow(hWnd);
+			break;
+		case IDM_USER_SIGNIN:
+			if (Current_User.User_Access == 0)
+			{
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_USER), hWnd, LoginPU);
+
+				//CheckUser(Current_User.User_Name);
+			}
+			else
+			{
+				CloseDBLinks();
+				CheckUser("Logout");
+			}
+
+			break;
+		case IDM_MGR_SITES:
+			if (MMB_Tickets.Enabled)
+			{
+				MMB_Tickets.Enabled = 0;
+			}
+			else
+			{
+				MMB_Tickets.Enabled = 1;
+			}
+			Validate_Security(hWnd);
+			break;
+		case IDM_SITE_NEWSITE:
+			break;
+		case IDM_SITE_OPENSITE:
+
+			break;
+		case IDM_USER_LISTMYTICKETS:
+			if (MMB_Resources.Enabled)
+			{
+				MMB_Resources.Enabled = 0;
+			}
+			else
+			{
+				MMB_Resources.Enabled = 1;
+			}
+			Validate_Security(hWnd);
+			break;
+		case IDM_USER_LISTMYSITES:
+			Show_Sites(hInst, hWnd, SW_SHOWNORMAL);
+			break;
+
+		default:
+			CString MissedMessage;
+			MissedMessage.Format(L"%d", message);
+			MessageBox(hWnd, (LPCWSTR)MissedMessage, L"Action Not Caught", 0);
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+	}
+	break;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		// TODO: Add any drawing code that uses hdc here...
+		if (SBars_Init)
+		{
+			// Reset the tool bar and status bar when main window needs repainted
+			ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_REFRESH);
+			ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_REFRESH, &MainSBar);
+		}
+		EndPaint(hWnd, &ps);
+	}
+	break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		// Close all database links
+		CloseDBLinks();
+		break;
+
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	return 0;
 }
 
 // Message handler for username/password popup.
@@ -319,18 +456,84 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 void Validate_Security(HWND hWnd)
 {
 	int i = 0;
-	int x = 0;
+	int x = 0, y = 0;
+	int Max_Menu = 1;
 
-	int Records = All_Security.size();
-	std::vector<int> MenuPlace;
+	// If security is 0 (logged out), then reset all options to default
+	if (Current_User.User_Access == 0)
+	{
+		MMB_Resources.Enabled = 0;
+		MMB_Tickets.Enabled = 0;
+	}
+	int Records = MMB_Security.size();
 
-	MenuPlace.resize(Records,0);
+	// Update the Main Menu Bar
 	for (i = 0; i < Records; i++)
 	{
-		All_Security[i]->Update(hInst, hWnd, Current_User.User_Access);
-		if (All_Security[i]->Active_Pos > 0)
+		Max_Menu = 1;
+		// Update the menu positions
+		for (x = 0; x < Records; x++)
 		{
+			if (MMB_Security[x]->Resource_Type == RES_MENU && MMB_Security[x]->Active_Pos > 0)
+			{
+				Max_Menu += MMB_Security[x]->Location;
+			}
+		}
+		MMB_Security[i]->Update(hInst, hWnd, Current_User.User_Access, Max_Menu);
+		for (x = 0; x < Records; x++)
+		{
+			if (MMB_Security[x]->Resource_Type == RES_MENU && MMB_Security[x]->Active_Pos > 0)
+			{
+				// If we're not in the right place, see if we need to move things around
+				if (MMB_Security[x]->Active_Pos < MMB_Security[x]->Location)
+				{
+					for (y = 0; y < Records; y++)
+					{
+						if (MMB_Security[y]->Active_Pos < MMB_Security[x]->Active_Pos)
+						{
+							MMB_Security[x]->Active_Pos++;
+						}
+					}
 
+				}
+				// If we're not the first menu item, then make sure there's one below us, otherwise move down the line
+				int temp = 0;
+				if (MMB_Security[x]->Active_Pos > 1)
+				{
+					for (y = 0; y < Records; y++)
+					{
+						if (MMB_Security[y]->Active_Pos != 0 && MMB_Security[y]->Active_Pos < MMB_Security[x]->Active_Pos)
+						{
+							temp++;
+						}
+					}
+					MMB_Security[x]->Active_Pos = 1+temp;
+				}
+			}
 		}
 	}
+	DrawMenuBar(hWnd);
+}
+
+BOOL Show_Sites(HINSTANCE hInstance, HWND Owner, int nCmdShow)
+{
+	MDICREATESTRUCTW mccs;
+	HWND chWnd;
+
+	mccs.szClass = cszWindowClass;
+	mccs.hOwner = hInstance;
+	mccs.x = mccs.cx = CW_USEDEFAULT;
+	mccs.y = mccs.cy = CW_USEDEFAULT;
+	mccs.style = MDIS_ALLCHILDSTYLES;
+	mccs.szTitle = L"Popup";
+
+	chWnd = (HWND) SendMessage(hWndClient, WM_MDICREATE,0, (LONG) (LPMDICREATESTRUCTW) &mccs);
+	
+	if (!chWnd)
+	{
+		return FALSE;
+	}
+
+	ShowWindow(chWnd, SW_SHOWNORMAL);
+	UpdateWindow(chWnd);
 }

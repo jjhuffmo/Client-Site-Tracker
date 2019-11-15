@@ -96,9 +96,9 @@ extern int PSB_UserStat;
 extern int PSB_Site;				
 extern int PSB_Tickets;			
 extern int PSB_Access;
-extern Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB_Sites, MMB_Tickets;
+extern Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB_Sites, MMB_Tickets, MMB_CloseSite, MMB_Resources;
 
-extern std::vector<Resource_Security*> All_Security;
+extern std::vector<Resource_Security*> MMB_Security;
 extern std::vector<StatusBar*> All_Status_Bars;
 extern HINSTANCE hInst;            
 

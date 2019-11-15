@@ -81,7 +81,7 @@ BEGIN
     MENUITEM "&Close Site",                 IDM_SITE_CLOSESITE
 END
 
-IDC_MGR_TICKETS MENU
+IDC_TICKETS MENU
 BEGIN
     MENUITEM "Create New",                  IDM_TICKETS_CREATENEW
     MENUITEM "Open Existing",               IDM_TICKETS_OPENEXISTING
@@ -218,6 +218,7 @@ BEGIN
     IDC_MAIN_TOOLBAR        "Main Window Toolbar"
     IDC_MAIN_STATUS         "Main Window Status Bar"
     IDC_CLIENTSITETRACKER   "CLIENTSITETRACKER"
+    IDC_CLIENTSITETRACKER_CHILD "CHILDWINDOW"
     IDC_SITE                "Client Site Tracker Site Menu"
 END
 

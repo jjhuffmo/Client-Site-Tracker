@@ -24,13 +24,12 @@ private:
 	int i = 0;
 	int found = 0;
 	HMENU hMenu, NewMenu;
-	MENUITEMINFO MenuItem = { sizeof(LPMENUITEMINFO) };
-	LPWSTR entry = NULL;
 
 public:
 	int Resource_Type = 0;				// Type of resource as an int - predefined above
 	UINT Resource_ID = 0;				// Resource ID as identified in the resource tables
 	int Min_Security = 0;				// Minimum Security Value - any user access level high than this number will enable it
+	int Enabled = 1;					// Enable/disable bit for turning options on and off based on open windows
 	int Location = 0;					// Location on a menu for menu resources
 	int Active_Pos = 0;					// Active Position it's displayed, 0 means not displayed
 
@@ -40,7 +39,7 @@ public:
 	// NewValue means different things to different resources:
 	//		RES_MENU - The title of the pop-up menu to see if it exists or to give it a title when created
 	//		RES_MENUITEM - Update the menu text or if NewValue == Keep then skip updating the text part
-	int Update(HINSTANCE hInst, HWND hWnd, int AccessLevel = 0, CString NewValue = "Keep")
+	int Update(HINSTANCE hInst, HWND hWnd, int AccessLevel = 0, int Max_Menu = 0, CString NewValue = "Keep")
 	{
 		found = 0;
 		switch (Resource_Type)
@@ -48,52 +47,32 @@ public:
 		// If it's a main menu item
 		case RES_MENU:
 			hMenu = GetMenu(hWnd);
-			MenuItem.fMask = MIIM_STRING | MIIM_ID;
-			MenuItem.fType = MIIM_STRING;
-			MenuItem.cbSize = sizeof(MENUITEMINFOW);
 
-			MenuItem.dwTypeData = NULL;
-			result = GetMenuItemInfoW(hMenu, i, true, &MenuItem);
-
-			// Check to see if the Menu is visible, if not then add it. 
-			/*for (i = 0; i <= GetMenuItemCount(hMenu)-1; i++)
-			{
-				//if (sizeof(entry) < MenuItem.cch++)
-				//{
-					entry = (LPWSTR)LocalAlloc(LMEM_FIXED,MenuItem.cch++);
-				//}
-				MenuItem.dwTypeData = entry;
-				MenuItem.cch++;
-				result = GetMenuItemInfoW(hMenu, i, true, &MenuItem);
-				entry = (LPWSTR) LocalReAlloc(entry, sizeof(MENUITEMINFOW) + MenuItem.cch, LMEM_MOVEABLE);
-				if ((CString)entry == Label)
-				{
-					found = i;
-				}
-			}*/
-			if (AccessLevel >= Min_Security)  // Valid security to see
+			if (AccessLevel >= Min_Security && Enabled)  // Valid security to see
 			{
 				// If it doesn't exist, insert it in the proper spot
 				if (Active_Pos == 0)	
 				{
 					NewMenu = LoadMenu(hInst, MAKEINTRESOURCE(Resource_ID));
-					if (Location <  GetMenuItemCount(hMenu) +1)
+					if (Location <  Max_Menu)
 					{
 						result = InsertMenuW(hMenu, Location, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
+						Active_Pos = Location;
 					}
 					else
 					{
-						result = InsertMenuW(hMenu, GetMenuItemCount(hMenu) - 1, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
+						int temp = GetMenuItemCount(hMenu) - 1;
+						result = InsertMenuW(hMenu, temp, MF_BYPOSITION | MF_POPUP, (UINT_PTR)NewMenu, Label);
+						Active_Pos = temp;
 					}
 					DestroyMenu(NewMenu);
-					Active_Pos = 1;
 				}
 			}
 			else
 			{
 				if (Active_Pos > 0)
 				{
-					result = DeleteMenu(hMenu, Location, MF_BYPOSITION);
+					result = DeleteMenu(hMenu, Active_Pos, MF_BYPOSITION);
 					DestroyMenu(NewMenu);
 					Active_Pos = 0;
 				}
@@ -104,7 +83,7 @@ public:
 		case RES_MENUITEM:
 			//HMENU hMenu;
 			hMenu = GetMenu(hWnd);
-			if (AccessLevel >= Min_Security)
+			if (AccessLevel >= Min_Security && Enabled)
 			{
 				result = EnableMenuItem(hMenu, Resource_ID, MF_ENABLED);
 			}

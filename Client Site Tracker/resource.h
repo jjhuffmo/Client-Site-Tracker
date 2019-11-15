@@ -3,6 +3,7 @@
 // Used by Client Site Tracker.rc
 //
 #define IDC_MYICON                      2
+#define IDD_CLIENTSITETRACKER_SITE	    101
 #define IDD_CLIENTSITETRACKER_DIALOG    102
 #define IDS_APP_TITLE                   103
 #define IDD_ABOUTBOX                    103
@@ -13,9 +14,12 @@
 #define IDI_CLIENTSITETRACKER           107
 #define IDI_SMALL                       108
 #define IDC_CLIENTSITETRACKER           109
-#define IDC_SITE                        110
-#define IDC_SYS_MANAGEMENT              111
-#define IDC_USER_SITE		            112
+#define IDC_CLIENTSITETRACKER_CHILD     110
+#define IDC_SITE                        111
+#define IDC_SYS_MANAGEMENT              112
+#define IDC_USER_SITE		            113
+#define IDC_RESOURCES		            114
+#define IDC_TICKETS			            115
 #define IDR_MAINFRAME                   128
 #define IDI_ICON1                       130
 #define IDD_USER                        131

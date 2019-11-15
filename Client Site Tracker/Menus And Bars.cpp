@@ -216,11 +216,11 @@ void UpdateStatus(HWND hWnd)
 	{
 		if (Current_User.User_Name != "Not Logged In")
 		{
-			MMB_Login.Update(hInst, hWnd, Current_User.User_Access, L"Sign Out");
+			MMB_Login.Update(hInst, hWnd, Current_User.User_Access, 0, L"Sign Out");
 		}
 		else
 		{
-			MMB_Login.Update(hInst, hWnd, Current_User.User_Access, L"Sign In");
+			MMB_Login.Update(hInst, hWnd, Current_User.User_Access, 0, L"Sign In");
 		}
 	}
 
@@ -269,17 +269,42 @@ void SetSecurity(void)
 	MMB_Sys_Management.Label = L"&Management";
 	MMB_Sys_Management.Location = 1;
 
-	// Main Status Bar System Manager
+	// Main Status Bar Sites Menu
 	MMB_Sites.Resource_Type = RES_MENU;
 	MMB_Sites.Resource_ID = IDC_USER_SITE;
 	MMB_Sites.Min_Security = 1000;
 	MMB_Sites.Label = L"&Sites";
 	MMB_Sites.Location = 2;
 
+	// Main Status Bar Close Site
+	MMB_CloseSite.Resource_Type = RES_MENUITEM;
+	MMB_CloseSite.Resource_ID = IDM_SITE_CLOSESITE;
+	MMB_CloseSite.Min_Security = 1000;
+	MMB_CloseSite.Enabled = 0;
+
+	// Main Status Bar Tickets Menu
+	MMB_Tickets.Resource_Type = RES_MENU;
+	MMB_Tickets.Resource_ID = IDC_TICKETS;
+	MMB_Tickets.Min_Security = 1000;
+	MMB_Tickets.Label = L"&Tickets";
+	MMB_Tickets.Location = 3;
+	MMB_Tickets.Enabled = 0;
+
+	// Main Status Bar Resources Menu
+	MMB_Resources.Resource_Type = RES_MENU;
+	MMB_Resources.Resource_ID = IDC_RESOURCES;
+	MMB_Resources.Min_Security = 1000;
+	MMB_Resources.Label = L"&Resources";
+	MMB_Resources.Location = 4;
+	MMB_Resources.Enabled = 0;
+
 	// Push all definitions on to the stack
-	All_Security.push_back(&MMB_Login);
-	All_Security.push_back(&MMB_MySites);
-	All_Security.push_back(&MMB_MyTickets);
-	All_Security.push_back(&MMB_Sys_Management);
-	All_Security.push_back(&MMB_Sites);
+	MMB_Security.push_back(&MMB_Login);
+	MMB_Security.push_back(&MMB_MySites);
+	MMB_Security.push_back(&MMB_MyTickets);
+	MMB_Security.push_back(&MMB_Sys_Management);
+	MMB_Security.push_back(&MMB_Sites);
+	MMB_Security.push_back(&MMB_CloseSite);
+	MMB_Security.push_back(&MMB_Tickets);
+	MMB_Security.push_back(&MMB_Resources);
 }
