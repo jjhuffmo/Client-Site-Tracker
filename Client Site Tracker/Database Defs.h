@@ -20,6 +20,8 @@ void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCod
 #define SQL_QUERY_SIZE      1000 // Max. Num characters for SQL Query passed in.
 #define PIPE                L'|'
 
+// Define database structures for records here
+
 //
 //	TABLE: USER_INFO
 //
@@ -33,13 +35,37 @@ void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCod
 #define DBUSERNAME		2							// Column # of Name field
 #define DBUSERACCESS	3							// Column # of Access Level field
 
-// Define database structures for records here
-// User_Info Table
 struct DBUSER {
 public:
 	int User_ID = 0;
 	CString User_Name;
 	int User_Access = 0;
+	std::vector<INT> Sites;
+};
+
+//
+//	TABLE: SITE_INFO
+//
+//	PURPOSE: Customer Site Information
+//
+//	NOTES: Modify this structure as the Site_Info table entries change
+//
+#define SITE_TABLE		"Site_Info"					// Name of the table to connect to
+#define SITE_MAX_SIZE	255							// Maximum length of string to return from this table
+#define ST_SITE_ID		1							// Site ID Column # is 1
+#define ST_SHORT_NAME	2							// Site Shot Name Column # is 2
+#define ST_FULL_NAME	3							// Site Full Name Column # is 3
+#define ST_CUSTOMER		4							// Site Customer Name Column # is 4
+#define ST_ADDRESS		5							// Site Address Column # is 5
+
+// Site Info
+struct SITE {
+public:
+	int Site_ID = 0;
+	CString Short_Name;
+	CString Full_Name;
+	CString Customer_Name;
+	CString Address;
 };
 
 /*******************************************/
@@ -60,5 +86,7 @@ public:
                                 }  \
                             }
 
+
+BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList);
 
 #endif // !DATABASE_H

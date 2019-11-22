@@ -32,13 +32,14 @@ Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB
 
 std::vector<Resource_Security*> MMB_Security;
 std::vector<StatusBar*> All_Status_Bars;
+std::vector<SITE> SitesList;
 
 extern DBUSER Current_User;
 extern SQLWCHAR* ConnStrIn;
 
 extern void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
 extern void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals);
-
+extern BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -146,15 +147,8 @@ ATOM MyRegisterClass(HINSTANCE hInstance) noexcept
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
-   CLIENTCREATESTRUCT ccs;
-
-   ccs.idFirstChild = 1200;
-
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-   hWndClient = CreateWindowW(L"MDICLIENT", (LPCTSTR) NULL, WS_CHILD | WS_CLIPCHILDREN,
-	   0, 0, 0, 0, hWnd, nullptr, hInstance, (LPSTR) &ccs);
 
    if (!hWnd)
    {
@@ -189,8 +183,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	CLIENTCREATESTRUCT ccs;
+
 	switch (message)
     {
+	case WM_CREATE:
+	{
+		ccs.idFirstChild = 1200;
+		ccs.hWindowMenu = NULL;
+
+		hWndClient = CreateWindowW(L"MDICLIENT", (LPCTSTR)NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE,
+			0, 0, 0, 0, hWnd, nullptr, hInst, (LPSTR)&ccs);
+	}
+	break;
+
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -231,7 +237,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_SITE_NEWSITE:
 				break;
 			case IDM_SITE_OPENSITE:
-
+				
 				break;
 			case IDM_USER_LISTMYTICKETS:
 				if (MMB_Resources.Enabled)
@@ -246,6 +252,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case IDM_USER_LISTMYSITES:
 				Show_Sites(hInst, hWnd, SW_SHOWNORMAL);
+				Read_Sites(hWnd, 0, SitesList);
 				break;
 
             default:
@@ -524,10 +531,11 @@ BOOL Show_Sites(HINSTANCE hInstance, HWND Owner, int nCmdShow)
 	mccs.hOwner = hInstance;
 	mccs.x = mccs.cx = CW_USEDEFAULT;
 	mccs.y = mccs.cy = CW_USEDEFAULT;
-	mccs.style = MDIS_ALLCHILDSTYLES;
+	//mccs.style = MDIS_ALLCHILDSTYLES;
+	mccs.style = 0;
 	mccs.szTitle = L"Popup";
 
-	chWnd = (HWND) SendMessage(hWndClient, WM_MDICREATE,0, (LONG) (LPMDICREATESTRUCTW) &mccs);
+	chWnd = (HWND) SendMessage(hWndClient, WM_MDICREATE,0, (LPARAM) (LPMDICREATESTRUCTW) &mccs);
 	
 	if (!chWnd)
 	{

@@ -17,7 +17,7 @@ DBUSER Current_User;
 //
 //  PURPOSE: Attempts to log into the database using Windows credentials.  Used when the program is first run.
 //
-//  NOTES:  If this function fails to connect, a flag is set and the user will have to manually sign into the database in ManConnectSQL()
+//  NOTES:  If this function fails to connect, the user will have to manually sign using the pop-up
 //
 INT ConnectSQL(HWND hWnd)
 {
@@ -154,7 +154,7 @@ int CheckUser(CString New_User)
 	SQLWCHAR* sqlUserName = (SQLWCHAR*)malloc(USER_SIZE);
 	SQLINTEGER sqlUserNamePtr;
 	SQLINTEGER sqlAccessLevel = 0, sqlAccessLevelPtr;
-	SQLRETURN results = 0;
+	//SQLRETURN results = 0;
 	// If the user is a domain user, truncate the domain off to get the raw name
 	if (New_User.Find(L"\\", 0) > 0)
 	{
@@ -191,4 +191,86 @@ Exit:
 	Current_User.User_Access = 0;
 	Current_User.User_Name = "Not Logged In";
 	return 0;
+}
+
+//
+//  FUNCTION: BOOL Read_Sites(INT User_ID, std::vector<SITE> SiteList)
+//
+//  PURPOSE: Reads the sites database table and stores the information in the structure
+//
+//  ARGUMENTS:	User_ID -> If only listing User Sites, this is the user_id to read
+//				SiteList -> Holding Vector of sites
+//
+BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList)
+{
+	SQLINTEGER sqlSiteID, sqlSiteIDPtr;
+	SQLWCHAR* sqlShortName = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
+	SQLWCHAR* sqlFullName = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
+	SQLWCHAR* sqlCustName = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
+	SQLWCHAR* sqlAddress = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
+	SQLINTEGER sqlShortNamePtr, sqlFullNamePtr, sqlCustNamePtr, sqlAddressPtr;
+	SQLINTEGER NoRecords;
+	SQLRETURN results = 0;
+	INT found = 0;
+	CString Query = "SELECT * FROM " + (CString)SITE_TABLE;
+	
+	SITE HoldingSite;
+
+	SQLConnStatus = (ConnectSQL(hWnd));
+
+	if (SQLConnStatus)
+	{
+		if (User_ID > 0)
+		{
+			// Add logic to read the Site_Users database to retrieve just this users available sites
+			Query = "SELECT * FROM " + (CString)SITE_TABLE;
+		}
+
+		TRYODBC(hdbc1,
+			SQL_HANDLE_DBC,
+			SQLExecDirect(hstmt1, (SQLWCHAR*)(LPCWSTR)(Query), SQL_NTS));
+
+		// Clear the site list variable
+		SiteList.clear();
+
+		// Read the database untill no records match
+		while (1)
+		{
+			TRYODBC(hdbc1,
+				SQL_HANDLE_DBC,
+				SQLFetch(hstmt1));
+			TRYODBC(hdbc1,
+					SQL_HANDLE_DBC,
+					SQLGetData(hstmt1, DBUSERID, SQL_C_SSHORT, &sqlSiteID, 0, &sqlSiteIDPtr));
+			TRYODBC(hdbc1,
+				SQL_HANDLE_DBC,
+				SQLGetData(hstmt1, ST_SHORT_NAME, SQL_WCHAR, sqlShortName, SITE_MAX_SIZE, &sqlShortNamePtr));
+			TRYODBC(hdbc1,
+				SQL_HANDLE_DBC,
+				SQLGetData(hstmt1, ST_FULL_NAME, SQL_WCHAR, sqlFullName, SITE_MAX_SIZE, &sqlFullNamePtr));
+			TRYODBC(hdbc1,
+				SQL_HANDLE_DBC,
+				SQLGetData(hstmt1, ST_CUSTOMER, SQL_WCHAR, sqlCustName, SITE_MAX_SIZE, &sqlCustNamePtr));
+			TRYODBC(hdbc1,
+				SQL_HANDLE_DBC,
+				SQLGetData(hstmt1, ST_ADDRESS, SQL_WCHAR, sqlAddress, SITE_MAX_SIZE, &sqlAddressPtr));
+			HoldingSite.Site_ID = (INT)sqlSiteID;
+			HoldingSite.Short_Name = (CString)sqlShortName;
+			HoldingSite.Full_Name = (CString)sqlFullName;
+			HoldingSite.Customer_Name = (CString)sqlCustName;
+			HoldingSite.Address = (CString)sqlAddress;
+			SiteList.push_back(HoldingSite);
+			found++;
+		}
+	}
+
+Exit:
+	if (found > 0)
+	{
+		return 1;
+	}
+	else 
+	{
+		return 0;
+	}
 }
