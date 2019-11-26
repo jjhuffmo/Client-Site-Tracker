@@ -35,6 +35,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK    ChildWndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    LoginPU(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK	List_Sites(HWND, UINT, WPARAM, LPARAM);
 
 
 // Forward declarations of functions included in this code module:

@@ -23,7 +23,7 @@ private:
 	int result = 0;
 	int i = 0;
 	int found = 0;
-	HMENU hMenu, NewMenu;
+	HMENU hMenu = NULL, NewMenu = NULL;
 
 public:
 	int Resource_Type = 0;				// Type of resource as an int - predefined above
@@ -81,7 +81,6 @@ public:
 
 		// If it's a Menu Item
 		case RES_MENUITEM:
-			//HMENU hMenu;
 			hMenu = GetMenu(hWnd);
 			if (AccessLevel >= Min_Security && Enabled)
 			{

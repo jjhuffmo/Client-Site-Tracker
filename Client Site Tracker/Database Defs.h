@@ -68,6 +68,29 @@ public:
 	CString Address;
 };
 
+//
+//	TABLE: SITE_USERS
+//
+//	PURPOSE: Users Access To Customer Sites Information
+//
+//	NOTES: 
+//
+#define SITE_USERS_TABLE		"Site_Users"				// Name of the table to connect to
+#define SU_SITE_USERS_ID		1							// Site Users ID Column # is 1
+#define SU_SITE_ID				2							// Site ID Column # is 2
+#define SU_USER_ID				3							// Users ID Column # is 3
+#define SU_ACCESS				4							// Users Access To Site Column # is 4
+
+// Site Info
+struct SITE_USERS 
+{
+public:
+	int Site_Users_ID = 0;
+	int Site_ID = 0;
+	int User_ID = 0;
+	int Access = 0;
+};
+
 /*******************************************/
 /* Macro to call ODBC functions and        */
 /* report an error on failure.             */
@@ -87,6 +110,7 @@ public:
                             }
 
 
-BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList);
+std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID);
+std::vector<SITE_USERS> Get_User_Sites(HWND hWnd, INT User_ID, INT Site_No);
 
 #endif // !DATABASE_H

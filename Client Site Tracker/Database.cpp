@@ -201,7 +201,7 @@ Exit:
 //  ARGUMENTS:	User_ID -> If only listing User Sites, this is the user_id to read
 //				SiteList -> Holding Vector of sites
 //
-BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList)
+std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID)
 {
 	SQLINTEGER sqlSiteID, sqlSiteIDPtr;
 	SQLWCHAR* sqlShortName = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
@@ -209,31 +209,31 @@ BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList)
 	SQLWCHAR* sqlCustName = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
 	SQLWCHAR* sqlAddress = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
 	SQLINTEGER sqlShortNamePtr, sqlFullNamePtr, sqlCustNamePtr, sqlAddressPtr;
-	SQLINTEGER NoRecords;
 	SQLRETURN results = 0;
-	INT found = 0;
+	INT found = 0, i = 0;
+	INT Has_Access = 0;
 	CString Query = "SELECT * FROM " + (CString)SITE_TABLE;
 	
+	std::vector<SITE> SiteList;
+	std::vector<SITE_USERS> Users_Sites;
 	SITE HoldingSite;
+
+	if (User_ID > 0)
+	{
+		Users_Sites = Get_User_Sites(hWnd, User_ID, 0);
+		// Add logic to read the Site_Users database to retrieve just this users available sites
+		Query = "SELECT * FROM " + (CString)SITE_TABLE;
+	}
 
 	SQLConnStatus = (ConnectSQL(hWnd));
 
 	if (SQLConnStatus)
 	{
-		if (User_ID > 0)
-		{
-			// Add logic to read the Site_Users database to retrieve just this users available sites
-			Query = "SELECT * FROM " + (CString)SITE_TABLE;
-		}
-
 		TRYODBC(hdbc1,
 			SQL_HANDLE_DBC,
 			SQLExecDirect(hstmt1, (SQLWCHAR*)(LPCWSTR)(Query), SQL_NTS));
 
-		// Clear the site list variable
-		SiteList.clear();
-
-		// Read the database untill no records match
+		// Read the database until no records match
 		while (1)
 		{
 			TRYODBC(hdbc1,
@@ -241,7 +241,7 @@ BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList)
 				SQLFetch(hstmt1));
 			TRYODBC(hdbc1,
 					SQL_HANDLE_DBC,
-					SQLGetData(hstmt1, DBUSERID, SQL_C_SSHORT, &sqlSiteID, 0, &sqlSiteIDPtr));
+					SQLGetData(hstmt1, ST_SITE_ID, SQL_C_SLONG, &sqlSiteID, 0, &sqlSiteIDPtr));
 			TRYODBC(hdbc1,
 				SQL_HANDLE_DBC,
 				SQLGetData(hstmt1, ST_SHORT_NAME, SQL_WCHAR, sqlShortName, SITE_MAX_SIZE, &sqlShortNamePtr));
@@ -259,18 +259,102 @@ BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList)
 			HoldingSite.Full_Name = (CString)sqlFullName;
 			HoldingSite.Customer_Name = (CString)sqlCustName;
 			HoldingSite.Address = (CString)sqlAddress;
-			SiteList.push_back(HoldingSite);
-			found++;
+			if (User_ID > 0)
+			{
+				Has_Access = false;
+				for (i = 0; i < (INT)Users_Sites.size(); i++)
+				{
+					if (HoldingSite.Site_ID == Users_Sites[i].Site_ID)
+					{
+						Has_Access = true;
+					}
+				}
+				if (Has_Access)
+				{
+					SiteList.push_back(HoldingSite);
+					found++;
+				}
+			}
+			else
+			{
+				SiteList.push_back(HoldingSite);
+				found++;
+			}
 		}
 	}
 
 Exit:
-	if (found > 0)
+		return SiteList;
+}
+
+//
+//  FUNCTION: std::vector<SITE_USERS> Get_User_Sites(INT User_ID, INT Site_No)
+//
+//  PURPOSE: Reads the list of databases the user has access to.
+
+//  ARGUMENTS:	User_ID -> User ID of sites to get
+//				Site_No -> Site Number to retrieve, if 0 then get all of them
+//
+std::vector<SITE_USERS> Get_User_Sites(HWND hWnd, INT User_ID, INT Site_No)
+{
+	SQLINTEGER sqlSiteUserID, sqlSiteUserIDPtr;
+	SQLINTEGER sqlSiteID, sqlSiteIDPtr;
+	SQLINTEGER sqlUserID, sqlUserIDPtr;
+	SQLINTEGER sqlAccess, sqlAccessPtr;
+
+	std::vector<SITE_USERS> Users_List;
+	SITE_USERS Current_List;
+
+	CString UserID = "";
+	CString SiteNo = "";
+	CString Query = "";
+
+	UserID.Format(L"%d", User_ID);
+	SiteNo.Format(L"%d", Site_No);
+
+	SQLConnStatus = (ConnectSQL(hWnd));
+	
+	if (Site_No > 0)
 	{
-		return 1;
+		Query = "SELECT * FROM " + (CString)SITE_USERS_TABLE + " WHERE User_ID = " + UserID + " AND Site_ID = " + SiteNo;
 	}
-	else 
+	else
 	{
-		return 0;
+		Query = "SELECT * FROM " + (CString)SITE_USERS_TABLE + " WHERE User_ID = " + UserID;
 	}
+
+	TRYODBC(hdbc1,
+		SQL_HANDLE_DBC,
+		SQLExecDirect(hstmt1, (SQLWCHAR*)(LPCWSTR)(Query), SQL_NTS));
+
+	// Read the database until no records match
+	while (1)
+	{
+		TRYODBC(hdbc1,
+			SQL_HANDLE_DBC,
+			SQLFetch(hstmt1));
+		TRYODBC(hdbc1,
+			SQL_HANDLE_DBC,
+			SQLGetData(hstmt1, SU_SITE_USERS_ID, SQL_C_SLONG, &sqlSiteUserID, 0, &sqlSiteUserIDPtr));
+		TRYODBC(hdbc1,
+			SQL_HANDLE_DBC,
+			SQLGetData(hstmt1, SU_SITE_ID, SQL_C_SLONG, &sqlSiteID, 0, &sqlSiteIDPtr));
+		TRYODBC(hdbc1,
+			SQL_HANDLE_DBC,
+			SQLGetData(hstmt1, SU_USER_ID, SQL_C_SLONG, &sqlUserID, 0, &sqlUserIDPtr));
+		TRYODBC(hdbc1,
+			SQL_HANDLE_DBC,
+			SQLGetData(hstmt1, SU_ACCESS, SQL_C_SLONG, &sqlAccess, 0, &sqlAccessPtr));
+
+		Current_List.Site_Users_ID = (INT)sqlSiteUserID;
+		Current_List.Site_ID = (INT)sqlSiteID;
+		Current_List.User_ID = (INT)sqlUserID;
+		Current_List.Access = (INT)sqlAccess;
+		Users_List.push_back(Current_List);
+	}
+
+Exit:
+
+return Users_List;
+
 }

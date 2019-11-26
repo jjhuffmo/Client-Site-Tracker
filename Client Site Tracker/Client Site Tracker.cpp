@@ -39,7 +39,8 @@ extern SQLWCHAR* ConnStrIn;
 
 extern void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
 extern void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals);
-extern BOOL Read_Sites(HWND hWnd, INT User_ID, std::vector<SITE> SiteList);
+extern std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID);
+extern std::vector<SITE_USERS> Get_User_Sites(HWND hWnd, INT User_ID, INT Site_No);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -251,8 +252,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				Validate_Security(hWnd);
 				break;
 			case IDM_USER_LISTMYSITES:
-				Show_Sites(hInst, hWnd, SW_SHOWNORMAL);
-				Read_Sites(hWnd, 0, SitesList);
+				//Show_Sites(hInst, hWnd, SW_SHOWNORMAL);
+				SitesList.clear();
+				SitesList = Read_Sites(hWnd, Current_User.User_ID);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_LISTSITES), hWnd, List_Sites);
 				break;
 
             default:
@@ -284,7 +287,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 	
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        return DefFrameProc(hWnd, hWndClient, message, wParam, lParam);
     }
     return 0;
 }
@@ -299,55 +302,7 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		// Parse the menu selections:
 		switch (wmId)
 		{
-		case IDM_ABOUT:
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			break;
-		case IDM_SITE_EXIT:
-			DestroyWindow(hWnd);
-			break;
-		case IDM_USER_SIGNIN:
-			if (Current_User.User_Access == 0)
-			{
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_USER), hWnd, LoginPU);
-
-				//CheckUser(Current_User.User_Name);
-			}
-			else
-			{
-				CloseDBLinks();
-				CheckUser("Logout");
-			}
-
-			break;
-		case IDM_MGR_SITES:
-			if (MMB_Tickets.Enabled)
-			{
-				MMB_Tickets.Enabled = 0;
-			}
-			else
-			{
-				MMB_Tickets.Enabled = 1;
-			}
-			Validate_Security(hWnd);
-			break;
 		case IDM_SITE_NEWSITE:
-			break;
-		case IDM_SITE_OPENSITE:
-
-			break;
-		case IDM_USER_LISTMYTICKETS:
-			if (MMB_Resources.Enabled)
-			{
-				MMB_Resources.Enabled = 0;
-			}
-			else
-			{
-				MMB_Resources.Enabled = 1;
-			}
-			Validate_Security(hWnd);
-			break;
-		case IDM_USER_LISTMYSITES:
-			Show_Sites(hInst, hWnd, SW_SHOWNORMAL);
 			break;
 
 		default:
@@ -363,19 +318,10 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
 		// TODO: Add any drawing code that uses hdc here...
-		if (SBars_Init)
-		{
-			// Reset the tool bar and status bar when main window needs repainted
-			ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_REFRESH);
-			ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_REFRESH, &MainSBar);
-		}
 		EndPaint(hWnd, &ps);
 	}
 	break;
 	case WM_DESTROY:
-		PostQuitMessage(0);
-		// Close all database links
-		CloseDBLinks();
 		break;
 
 	default:
@@ -453,6 +399,58 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+// Message handler for about box.
+INT_PTR CALLBACK List_Sites(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	HWND S_List = NULL;
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		S_List = GetDlgItem(hDlg, IDC_SITELIST);
+		INT i;
+
+		for (i = 0; i < (INT)SitesList.size(); i++)
+		{
+			int pos = SendMessage(S_List, LB_ADDSTRING, 0, (LPARAM)(LPCWSTR)SitesList[i].Short_Name);
+			SendMessage(S_List, LB_SETITEMDATA, pos, (LPARAM)SitesList[i].Site_ID);
+		}
+		SetFocus(S_List);
+		return (INT_PTR)TRUE;
+
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+			case IDOK:
+			case IDCANCEL:
+				EndDialog(hDlg, LOWORD(wParam));
+				return (INT_PTR)TRUE;
+
+			case IDC_SITELIST:
+			{
+				switch (HIWORD(wParam))
+				{
+				case LBN_SELCHANGE:
+				{
+					S_List = GetDlgItem(hDlg, IDC_SITELIST);
+
+					// Get selected value
+					int i = (int)SendMessage(S_List, LB_GETCURSEL, 0, 0);
+					int Site_ID = (int)SendMessage(S_List, LB_GETITEMDATA, i, 0);
+					CString SID = "";
+					SID.Format(L"%d", Site_ID);
+					//CString Selection = L"Site: " + SitesList[Site_ID].Full_Name;
+					MessageBox(hDlg, (LPCWSTR)SID, L"Selected Site", 0);
+				}
+				}
+			}
+		}
+		break;
+
+	}
+	return (INT_PTR)FALSE;
+}
+
 //
 //  FUNCTION: Validate_Security(void)
 //
@@ -524,14 +522,17 @@ void Validate_Security(HWND hWnd)
 
 BOOL Show_Sites(HINSTANCE hInstance, HWND Owner, int nCmdShow)
 {
+	BOOL Swin = false;
 	MDICREATESTRUCTW mccs;
 	HWND chWnd;
 
 	mccs.szClass = cszWindowClass;
 	mccs.hOwner = hInstance;
 	mccs.x = mccs.cx = CW_USEDEFAULT;
-	mccs.y = mccs.cy = CW_USEDEFAULT;
-	//mccs.style = MDIS_ALLCHILDSTYLES;
+	//mccs.y = mccs.cy = CW_USEDEFAULT;
+	mccs.cy = CW_USEDEFAULT;
+	mccs.y = 100;
+	mccs.style = MDIS_ALLCHILDSTYLES;
 	mccs.style = 0;
 	mccs.szTitle = L"Popup";
 
@@ -542,6 +543,8 @@ BOOL Show_Sites(HINSTANCE hInstance, HWND Owner, int nCmdShow)
 		return FALSE;
 	}
 
-	ShowWindow(chWnd, SW_SHOWNORMAL);
+	Swin = ShowWindow(chWnd, SW_SHOWNORMAL);
 	UpdateWindow(chWnd);
+
+	return true;
 }
