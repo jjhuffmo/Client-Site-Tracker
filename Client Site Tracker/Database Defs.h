@@ -35,14 +35,6 @@ void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCod
 #define DBUSERNAME		2							// Column # of Name field
 #define DBUSERACCESS	3							// Column # of Access Level field
 
-struct DBUSER {
-public:
-	int User_ID = 0;
-	CString User_Name;
-	int User_Access = 0;
-	std::vector<INT> Sites;
-};
-
 //
 //	TABLE: SITE_INFO
 //
@@ -58,16 +50,6 @@ public:
 #define ST_CUSTOMER		4							// Site Customer Name Column # is 4
 #define ST_ADDRESS		5							// Site Address Column # is 5
 
-// Site Info
-struct SITE {
-public:
-	int Site_ID = 0;
-	CString Short_Name;
-	CString Full_Name;
-	CString Customer_Name;
-	CString Address;
-};
-
 //
 //	TABLE: SITE_USERS
 //
@@ -80,16 +62,6 @@ public:
 #define SU_SITE_ID				2							// Site ID Column # is 2
 #define SU_USER_ID				3							// Users ID Column # is 3
 #define SU_ACCESS				4							// Users Access To Site Column # is 4
-
-// Site Info
-struct SITE_USERS 
-{
-public:
-	int Site_Users_ID = 0;
-	int Site_ID = 0;
-	int User_ID = 0;
-	int Access = 0;
-};
 
 /*******************************************/
 /* Macro to call ODBC functions and        */
@@ -110,7 +82,7 @@ public:
                             }
 
 
-std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID);
+std::vector<SITE> Get_Sites(HWND hWnd, INT User_ID, INT Site_ID);
 std::vector<SITE_USERS> Get_User_Sites(HWND hWnd, INT User_ID, INT Site_No);
 
 #endif // !DATABASE_H

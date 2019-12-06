@@ -33,13 +33,14 @@ Resource_Security MMB_Login, MMB_MySites, MMB_Sys_Management, MMB_MyTickets, MMB
 std::vector<Resource_Security*> MMB_Security;
 std::vector<StatusBar*> All_Status_Bars;
 std::vector<SITE> SitesList;
+std::vector<SitesMDI> Active_Sites;
 
 extern DBUSER Current_User;
 extern SQLWCHAR* ConnStrIn;
 
 extern void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action);
 extern void ManageStatusBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action, StatusBar* sbVals);
-extern std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID);
+extern std::vector<SITE> Get_Sites(HWND hWnd, INT User_ID, INT Site_ID);
 extern std::vector<SITE_USERS> Get_User_Sites(HWND hWnd, INT User_ID, INT Site_No);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -66,8 +67,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-
-		SetSecurity();
+	SetSecurity();
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CLIENTSITETRACKER));
 
@@ -166,7 +166,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    UpdateWindow(hWnd);
 
    // Generate the main Toolbar and the main Status Bar
-   ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_CREATE);
+   //ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_CREATE);
    ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_CREATE, &MainSBar);
 
    return TRUE;
@@ -195,6 +195,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		hWndClient = CreateWindowW(L"MDICLIENT", (LPCTSTR)NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE,
 			0, 0, 0, 0, hWnd, nullptr, hInst, (LPSTR)&ccs);
+
 	}
 	break;
 
@@ -234,6 +235,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					MMB_Tickets.Enabled = 1;
 				}
 				Validate_Security(hWnd);
+				SendMessage(hWndClient, WM_MDITILE, MDITILE_HORIZONTAL, 0);
 				break;
 			case IDM_SITE_NEWSITE:
 				break;
@@ -254,7 +256,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case IDM_USER_LISTMYSITES:
 				//Show_Sites(hInst, hWnd, SW_SHOWNORMAL);
 				SitesList.clear();
-				SitesList = Read_Sites(hWnd, Current_User.User_ID);
+				SitesList = Get_Sites(hWnd, Current_User.User_ID, 0);
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_LISTSITES), hWnd, List_Sites);
 				break;
 
@@ -274,7 +276,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (SBars_Init)
 			{
 				// Reset the tool bar and status bar when main window needs repainted
-				ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_REFRESH);
+				//ManageToolBar(hWnd, hInst, IDC_MAIN_TOOLBAR, TB_REFRESH);
 				ManageStatusBar(hWnd, hInst, IDC_MAIN_STATUS, SB_REFRESH, &MainSBar);
 			}
             EndPaint(hWnd, &ps);
@@ -294,8 +296,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	CString WindowName = L"Empty";
+	INT Site_ID = 0;
+
 	switch (message)
 	{
+	case WM_CREATE:
+	{
+		GetWindowText(hWnd, (LPWSTR)(LPCWSTR)WindowName, 255);
+		break;
+	}
+	case WM_SIZE:
+	{
+		break;
+	}
 	case WM_COMMAND:
 	{
 		int wmId = LOWORD(wParam);
@@ -306,9 +320,6 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 
 		default:
-			CString MissedMessage;
-			MissedMessage.Format(L"%d", message);
-			MessageBox(hWnd, (LPCWSTR)MissedMessage, L"Action Not Caught", 0);
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 	}
@@ -322,6 +333,14 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	}
 	break;
 	case WM_DESTROY:
+		// Remove the window from the stack
+		for (INT i = 0; i < (INT)Active_Sites.size() ; i++)
+		{
+			if (Active_Sites[i].hwnd == hWnd)
+			{
+				Active_Sites.erase(Active_Sites.begin() + i);
+			}
+		}
 		break;
 
 	default:
@@ -399,10 +418,12 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-// Message handler for about box.
+// Message handler for list sites box.
 INT_PTR CALLBACK List_Sites(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND S_List = NULL;
+	int Site_ID = 0, i = 0;
+
 	UNREFERENCED_PARAMETER(lParam);
 	switch (message)
 	{
@@ -422,6 +443,14 @@ INT_PTR CALLBACK List_Sites(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		switch (LOWORD(wParam))
 		{
 			case IDOK:
+				// Open the Site MDI Child Window
+				S_List = GetDlgItem(hDlg, IDC_SITELIST);
+				i = (int)SendMessage(S_List, LB_GETCURSEL, 0, 0);
+				Site_ID = (int)SendMessage(S_List, LB_GETITEMDATA, i, 0);
+				if (Site_ID > 0)
+				{
+					Show_Sites(Site_ID);
+				}
 			case IDCANCEL:
 				EndDialog(hDlg, LOWORD(wParam));
 				return (INT_PTR)TRUE;
@@ -435,12 +464,12 @@ INT_PTR CALLBACK List_Sites(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					S_List = GetDlgItem(hDlg, IDC_SITELIST);
 
 					// Get selected value
-					int i = (int)SendMessage(S_List, LB_GETCURSEL, 0, 0);
-					int Site_ID = (int)SendMessage(S_List, LB_GETITEMDATA, i, 0);
+					i = (int)SendMessage(S_List, LB_GETCURSEL, 0, 0);
+					Site_ID = (int)SendMessage(S_List, LB_GETITEMDATA, i, 0);
 					CString SID = "";
 					SID.Format(L"%d", Site_ID);
-					//CString Selection = L"Site: " + SitesList[Site_ID].Full_Name;
-					MessageBox(hDlg, (LPCWSTR)SID, L"Selected Site", 0);
+					//MessageBox(hDlg, (LPCWSTR)SID, L"Selected Site", 0);
+					
 				}
 				}
 			}
@@ -520,31 +549,95 @@ void Validate_Security(HWND hWnd)
 	DrawMenuBar(hWnd);
 }
 
-BOOL Show_Sites(HINSTANCE hInstance, HWND Owner, int nCmdShow)
+//
+//  FUNCTION: BOOL Show_Sites(int SiteID)
+//
+//  PURPOSE: Shows a list of sites for the user and allows for opening of it.
+//
+//	ARGUMENTS: SiteID -> ID of the site to be opened
+
+//  NOTES:  By default, everything will be disabled
+//
+BOOL Show_Sites(int SiteID)
 {
-	BOOL Swin = false;
 	MDICREATESTRUCTW mccs;
 	HWND chWnd;
+	BOOL Found = false;
 
-	mccs.szClass = cszWindowClass;
-	mccs.hOwner = hInstance;
-	mccs.x = mccs.cx = CW_USEDEFAULT;
-	//mccs.y = mccs.cy = CW_USEDEFAULT;
-	mccs.cy = CW_USEDEFAULT;
-	mccs.y = 100;
-	mccs.style = MDIS_ALLCHILDSTYLES;
-	mccs.style = 0;
-	mccs.szTitle = L"Popup";
-
-	chWnd = (HWND) SendMessage(hWndClient, WM_MDICREATE,0, (LPARAM) (LPMDICREATESTRUCTW) &mccs);
-	
-	if (!chWnd)
+	for (INT i = 0; i < (INT)Active_Sites.size(); i++)
 	{
-		return FALSE;
+		if (Active_Sites[i].Site.Site_ID == SiteID)
+		{
+			Found = true;
+		}
 	}
 
-	Swin = ShowWindow(chWnd, SW_SHOWNORMAL);
-	UpdateWindow(chWnd);
+	if (Found == false)
+	{
+		mccs.szClass = cszWindowClass;
+		mccs.hOwner = hInst;
+		mccs.x = mccs.cx = CW_USEDEFAULT;
+		mccs.y = mccs.cy = CW_USEDEFAULT;
+		mccs.style = MDIS_ALLCHILDSTYLES;
+		mccs.szTitle = L"Loading";
 
+		INT result = Load_Site_Window(NULL, SiteID, Current_User.User_ID);
+		if (result)
+		{
+			mccs.szTitle = Active_Sites[(INT)Active_Sites.size()-1].Site.Short_Name;
+			chWnd = (HWND)SendMessage(hWndClient, WM_MDICREATE, 0, (LPARAM)(LPMDICREATESTRUCTW)&mccs);
+			if (!chWnd)
+			{
+				return FALSE;
+			}
+			ShowWindow(chWnd, SW_SHOWNORMAL);
+			UpdateWindow(chWnd);
+			Active_Sites[(INT)Active_Sites.size() - 1].hwnd = chWnd;
+		}
+		else
+		{
+			MessageBox(hWndClient, L"Failed To Read Site From DB", L"Read Failure", MB_OK);
+		}
+	}
 	return true;
+}
+
+//
+//
+//  FUNCTION: INT Load_Site_Window(HWND hWnd, INT SiteID, INT UserID)
+//
+//  PURPOSE: Loads a Site's Information For Interaction in an MDI Child Window
+//
+//	ARGUMENTS:	hWnd -> Window Handle for reference
+//				SiteID -> ID of the site to be opened
+//				UserID -> User ID of the current user (put here to try to 
+//							eliminate global tags in future revisions)
+//
+//	RETURN VALUE: True if read and false if not
+//
+//  NOTES:  Separated into it's own function because reading Site Information
+//			may need to be done elsewhere
+//
+BOOL Load_Site_Window(HWND hWnd, INT SiteID, INT UserID)
+{
+	SitesMDI ChosenSite;
+	std::vector<SITE> SiteInfo;
+	std::vector<SITE_USERS> SiteUsers;
+
+	SiteInfo = Get_Sites(hWnd, UserID, SiteID);
+	if (SiteInfo[0].Site_ID == SiteID)
+	{
+		// If a valid site was retrieved, read the other tables
+		SiteUsers = Get_User_Sites(hWnd, UserID, SiteID);
+	}
+	else
+		return 0;
+	if (SiteUsers.size() == 0)
+		return 0;
+	//ChosenSite.hwnd = hWnd;
+	ChosenSite.Site = SiteInfo[0];
+	ChosenSite.Site_Access = SiteUsers[0].Access;
+	Active_Sites.push_back(ChosenSite);
+
+	return 1;
 }

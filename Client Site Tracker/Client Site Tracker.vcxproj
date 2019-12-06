@@ -157,6 +157,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Classes_Structs.h" />
     <ClInclude Include="Client Site Tracker.h" />
     <ClInclude Include="Database Defs.h" />
     <ClInclude Include="framework.h" />

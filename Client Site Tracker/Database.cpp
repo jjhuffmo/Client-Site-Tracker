@@ -200,8 +200,9 @@ Exit:
 //
 //  ARGUMENTS:	User_ID -> If only listing User Sites, this is the user_id to read
 //				SiteList -> Holding Vector of sites
+//				Site_ID -> If trying to get Site Information, this is the Site_ID to read
 //
-std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID)
+std::vector<SITE> Get_Sites(HWND hWnd, INT User_ID, INT Site_ID)
 {
 	SQLINTEGER sqlSiteID, sqlSiteIDPtr;
 	SQLWCHAR* sqlShortName = (SQLWCHAR*)malloc(SITE_MAX_SIZE);
@@ -213,6 +214,8 @@ std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID)
 	INT found = 0, i = 0;
 	INT Has_Access = 0;
 	CString Query = "SELECT * FROM " + (CString)SITE_TABLE;
+	CString SID = L"";
+	CString UID = L"";
 	
 	std::vector<SITE> SiteList;
 	std::vector<SITE_USERS> Users_Sites;
@@ -223,6 +226,13 @@ std::vector<SITE> Read_Sites(HWND hWnd, INT User_ID)
 		Users_Sites = Get_User_Sites(hWnd, User_ID, 0);
 		// Add logic to read the Site_Users database to retrieve just this users available sites
 		Query = "SELECT * FROM " + (CString)SITE_TABLE;
+	}
+	if (Site_ID > 0)
+	{
+		SID.Format(L"%d", Site_ID);
+
+		SID.Format(L"%d", Site_ID);
+		Query = "SELECT * FROM " + (CString)SITE_TABLE + " WHERE Site_ID = " + SID;
 	}
 
 	SQLConnStatus = (ConnectSQL(hWnd));

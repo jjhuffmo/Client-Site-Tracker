@@ -36,7 +36,7 @@ void ManageToolBar(HWND hWndParent, HINSTANCE hInst, int hMenu, int Action)
 		break;
 
 	case TB_REFRESH:
-		SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, 0, 0);
+		SendMessage(GetDlgItem(hWndParent, hMenu), WM_SIZE, (WPARAM)sizeof(TBBUTTON), 0);
 		break;
 	}
 }
